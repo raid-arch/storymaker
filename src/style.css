@@ -3076,3 +3076,108 @@ kbd {
     animation: none !important;
   }
 }
+
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 38px 0;
+  padding: 15px 20px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--green);
+}
+.install-banner > div {
+  flex: 1;
+  min-width: 0;
+}
+.install-banner strong {
+  font-size: 12px;
+  color: var(--text);
+}
+.install-banner p {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.install-banner .button {
+  font-size: 11px;
+}
+.install-complete {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.install-dialog {
+  margin: auto;
+  color: var(--text);
+}
+.install-dialog::backdrop {
+  background: #070d09b8;
+  backdrop-filter: blur(5px);
+}
+.install-dialog p,
+.install-dialog li {
+  font-size: 12px;
+  line-height: 1.9;
+}
+.install-dialog ol {
+  list-style: decimal;
+  padding-left: 22px;
+  margin: 12px 0 22px;
+}
+.install-dialog h3 {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.install-message {
+  padding: 14px;
+  background: var(--green-dim);
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+.install-help {
+  margin: 23px 0;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.install-help strong {
+  font-size: 12px;
+}
+.install-help p {
+  color: var(--muted);
+  margin-top: 9px;
+}
+@media (max-width: 960px) {
+  .install-banner {
+    margin: 17px 22px 0;
+  }
+}
+@media (max-width: 720px) {
+  .install-banner {
+    margin: 17px 18px 0;
+    padding: 15px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .install-banner > div {
+    min-width: 190px;
+  }
+  .install-banner > .button {
+    width: 100%;
+    margin-top: 3px;
+  }
+  .install-banner strong {
+    font-size: 11px;
+  }
+  .install-complete {
+    margin-left: auto;
+  }
+  .install-dialog {
+    width: calc(100% - 30px);
+    max-height: 85dvh;
+  }
+}

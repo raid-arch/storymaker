@@ -61,6 +61,7 @@ import {
 import type { Data, Entry, Kind, Project } from "./model";
 import { EntryEditor, ProjectForm } from "./Editors";
 import { FamilyGraph, RelationForm } from "./Graph";
+import InstallApp from "./InstallApp";
 type View =
   | "dashboard"
   | "character"
@@ -398,11 +399,15 @@ export default function App() {
       history.current = [...history.current.slice(-29), data];
     }
     lastHistory.current = { id: group, at: t };
+    saveRevision.current += 1;
+    setSaveState("保存中…");
     setData(fn(data));
   }
   function undo() {
     const prev = history.current.pop();
     if (prev) {
+      saveRevision.current += 1;
+      setSaveState("保存中…");
       setData(prev);
       lastHistory.current = { id: "", at: 0 };
       setNotice("直前の操作を取り消しました");
@@ -805,6 +810,7 @@ export default function App() {
             </button>
           </div>
         )}
+        <InstallApp />
         <main className="main-content">
           {search.trim() ? (
             <>
