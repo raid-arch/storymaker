@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 async function saved(page: import("@playwright/test").Page) {
   await expect(page.locator(".save-indicator")).toContainText("保存済み");
 }
@@ -55,6 +55,6 @@ test("personal appearance persists, rearranges dashboard, and resets without del
   await expect(page.locator("html")).toHaveAttribute("data-layout", "cards");
   await expect(page.locator('[data-home-section="mysteries"]')).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
+    page.getByRole("heading", { name: "検証用の物語", exact: true }),
   ).toBeVisible();
 });

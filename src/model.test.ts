@@ -1,3 +1,4 @@
+import { seed } from "../tests/sample";
 import { describe, expect, it } from "vitest";
 import {
   deleteEntry,
@@ -8,7 +9,6 @@ import {
   newEntry,
   newProject,
   searchEntries,
-  seed,
   sortEvents,
   validateBackup,
 } from "./model";
@@ -103,16 +103,14 @@ describe("world archive data", () => {
       id: "g" + i,
     }));
     entries[0].fields.世代 = "10";
-    const relations = entries
-      .slice(1)
-      .map((e, i) => ({
-        id: "r" + i,
-        projectId: "laurel",
-        from: entries[i].id,
-        to: e.id,
-        type: "親子" as const,
-        note: "",
-      }));
+    const relations = entries.slice(1).map((e, i) => ({
+      id: "r" + i,
+      projectId: "laurel",
+      from: entries[i].id,
+      to: e.id,
+      type: "親子" as const,
+      note: "",
+    }));
     const generations = familyGenerations(entries, relations);
     expect(generations.g0).toBe(10);
     expect(generations.g39).toBe(49);
@@ -140,7 +138,7 @@ describe("world archive data", () => {
     e.custom = [{ name: "花", value: "月下香" }];
     d.entries.push(e);
     const out = markdown(d, "laurel");
-    expect(out).toContain("完璧な血脈");
+    expect(out).toContain("継承の役割");
     expect(out).toContain("## 人物の関係");
     expect(out).toContain("兄弟姉妹");
     expect(out).toContain("章の設定");

@@ -1,3 +1,4 @@
+import { seed } from "../tests/sample";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fingerprint,
@@ -8,7 +9,7 @@ import {
   writeRemote,
 } from "./githubSync";
 import type { SyncConnection } from "./githubSync";
-import { seed } from "./model";
+
 const connection: SyncConnection = {
   owner: "test-owner",
   repo: "private-stories",
@@ -105,16 +106,14 @@ describe("private GitHub snapshot sync", () => {
   it("rejects malformed remote content without replacing local data", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          response({
-            sha: "bad",
-            size: 90,
-            encoding: "base64",
-            content: Buffer.from('{"format":"other"}').toString("base64"),
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        response({
+          sha: "bad",
+          size: 90,
+          encoding: "base64",
+          content: Buffer.from('{"format":"other"}').toString("base64"),
+        }),
+      ),
     );
     await expect(readRemote(connection)).rejects.toThrow("対応する綴庭");
   });

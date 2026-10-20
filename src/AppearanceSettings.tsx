@@ -242,7 +242,7 @@ export default function AppearanceSettings({
           </div>
           <div className="appearance-preview">
             <span className="eyebrow">LIVE PREVIEW</span>
-            <h3>ローレルの屋敷</h3>
+            <h3>あなたの物語</h3>
             <p>
               まだ名前のない物語も、あなたの一行から。この場所を、いちばん書きやすい庭に。
             </p>

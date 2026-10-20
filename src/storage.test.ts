@@ -1,8 +1,13 @@
 import "fake-indexeddb/auto";
 import { expect, it } from "vitest";
 import { load, persist } from "./storage";
+import { seed } from "../tests/sample";
 it("initializes once and preserves user edits, removed samples, images and empty projects across reloads", async () => {
-  const data = await load();
+  const initial = await load();
+  expect(initial.projects).toEqual([]);
+  expect(initial.entries).toEqual([]);
+  expect(initial.relations).toEqual([]);
+  const data = seed();
   data.projects[0].name = "自分の作品";
   data.entries = [];
   data.relations = [];

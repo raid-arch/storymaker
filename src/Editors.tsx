@@ -483,7 +483,7 @@ export function EntryEditor({
                   <input
                     value={entry.fields.時期 || ""}
                     onChange={(e) => field("時期", e.target.value)}
-                    placeholder="先々代 / 春 / 4月1日"
+                    placeholder="春 / 4月1日"
                   />
                 </label>
               </div>

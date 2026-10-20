@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { seed, validateBackup } from "./model";
+import { emptyData, validateBackup } from "./model";
 import type { Data } from "./model";
 const database = () =>
   openDB("tsuzuriniwa", 1, {
@@ -11,7 +11,7 @@ export async function load(): Promise<Data> {
   const db = await database();
   const saved = await db.get("state", "main");
   if (saved) return validateBackup(saved);
-  const initial = seed();
+  const initial = emptyData();
   await db.put("state", initial, "main");
   return initial;
 }

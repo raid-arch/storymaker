@@ -29,7 +29,6 @@ import {
   FileText,
   Link2,
   Globe2,
-  CircleHelp,
   Flower2,
   Leaf,
   WifiOff,
@@ -56,7 +55,6 @@ import {
   newProject,
   now,
   searchEntries,
-  seed,
   sortEvents,
   statuses,
   validateBackup,
@@ -1672,62 +1670,6 @@ export default function App() {
                         <p className="small">
                           インストール：AndroidのChromeではメニューから「ホーム画面に追加」、PCではブラウザのインストール操作を使用します。ログイン・有料APIは不要です。
                         </p>
-                      </section>
-                      <section className="panel settings-panel">
-                        <h2>
-                          <CircleHelp size={20} />
-                          サンプルプロジェクト
-                        </h2>
-                        <p>
-                          サンプルは初回だけ登録されます。追加する場合も、既存の作品は上書きしません。
-                        </p>
-                        <button
-                          className="button subtle"
-                          onClick={() => {
-                            const sample = seed();
-                            const idMap = new Map(
-                              [...sample.projects, ...sample.entries].map(
-                                (e) => [e.id, crypto.randomUUID()],
-                              ),
-                            );
-                            change((d) => ({
-                              ...d,
-                              projects: [
-                                ...d.projects,
-                                ...sample.projects.map((p) => ({
-                                  ...p,
-                                  id: idMap.get(p.id)!,
-                                  name: p.name + "（サンプル）",
-                                })),
-                              ],
-                              entries: [
-                                ...d.entries,
-                                ...sample.entries.map((e) => ({
-                                  ...e,
-                                  id: idMap.get(e.id)!,
-                                  projectId: idMap.get(e.projectId)!,
-                                  links: e.links.map((l) => idMap.get(l)!),
-                                })),
-                              ],
-                              relations: [
-                                ...d.relations,
-                                ...sample.relations.map((r) => ({
-                                  ...r,
-                                  id: crypto.randomUUID(),
-                                  projectId: idMap.get(r.projectId)!,
-                                  from: idMap.get(r.from)!,
-                                  to: idMap.get(r.to)!,
-                                })),
-                              ],
-                            }));
-                            setNotice(
-                              "新しいサンプルを追加しました。既存データは変更していません。",
-                            );
-                          }}
-                        >
-                          <Plus size={16} />
-                          別のサンプルとして追加
-                        </button>
                       </section>
                     </div>
                   </div>

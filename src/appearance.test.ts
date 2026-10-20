@@ -1,6 +1,7 @@
+import { seed } from "../tests/sample";
 import { expect, it } from "vitest";
 import { defaultAppearance, validAppearance } from "./appearance";
-import { seed, validateBackup } from "./model";
+import { validateBackup } from "./model";
 it("loads existing backups without appearance settings and preserves their stories", () => {
   const d = seed();
   expect(validateBackup(d)).toEqual(d);

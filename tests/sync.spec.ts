@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import type { Data } from "../src/model";
 async function settings(page: import("@playwright/test").Page) {
   await page.locator(".main-nav").waitFor({ state: "attached" });
@@ -19,9 +19,13 @@ async function connect(page: import("@playwright/test").Page) {
     .fill("test-only-secret");
   await page.getByRole("button", { name: "接続してデータを確認" }).click();
 }
-async function home(page: import('@playwright/test').Page) {
- if (await page.locator('.bottom-nav').isVisible()) await page.locator('.bottom-nav').getByRole('button',{name:'ホーム',exact:true}).click();
- else await page.locator('.brand').click();
+async function home(page: import("@playwright/test").Page) {
+  if (await page.locator(".bottom-nav").isVisible())
+    await page
+      .locator(".bottom-nav")
+      .getByRole("button", { name: "ホーム", exact: true })
+      .click();
+  else await page.locator(".brand").click();
 }
 function cloud() {
   let data: Data | null = null,
@@ -98,7 +102,7 @@ test("private cloud sync uploads, persists connection, pulls safely, and stops o
     .getByRole("button", { name: "この端末の内容を初めてクラウドに保存" })
     .click();
   await expect(page.locator(".sync-status")).toContainText("同期済み");
-  expect(remote.data?.projects[0].name).toBe("明日も花は咲く");
+  expect(remote.data?.projects[0].name).toBe("検証用の物語");
   expect(JSON.stringify(remote.data)).not.toContain("test-only-secret");
   await page.reload();
   await settings(page);

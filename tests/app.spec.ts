@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 async function nav(page: import("@playwright/test").Page, name: string) {
   await page.locator(".main-nav").waitFor({ state: "attached" });
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
@@ -33,7 +33,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./");
   await expect(
-    page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
+    page.getByRole("heading", { name: "検証用の物語", exact: true }),
   ).toBeVisible();
   await nav(page, "キャラクター");
   await expect(page.locator(".entry-card")).toHaveCount(5);
@@ -46,9 +46,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   await page.getByLabel("自由項目1の名前").fill("好きな花");
   await page.getByLabel("自由項目1の内容").fill("月下香");
   await page.getByRole("button", { name: "関連リンクを追加" }).click();
-  await page
-    .getByRole("button", { name: /ローレル家.*明日も花は咲く/ })
-    .click();
+  await page.getByRole("button", { name: /テスト家.*検証用の物語/ }).click();
   await saved(page);
   await page.reload();
   await nav(page, "キャラクター");
@@ -57,7 +55,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   await expect(page.getByLabel("自由項目1の内容")).toHaveValue("月下香");
   await page
     .locator(".link-row")
-    .getByRole("button", { name: /ローレル家/ })
+    .getByRole("button", { name: /テスト家/ })
     .first()
     .click();
   await expect(
@@ -185,9 +183,7 @@ test("family relationships, cycle rejection, dragging and navigation", async ({
     .click();
   await expect(page.locator(".graph-person")).toHaveCount(7);
   await page.getByRole("button", { name: "配置を編集", exact: true }).click();
-  const person = page
-    .locator(".graph-person")
-    .filter({ hasText: "モルガン・ローレル" });
+  const person = page.locator(".graph-person").filter({ hasText: "人物A" });
   const before = await person.getAttribute("style");
   await person.scrollIntoViewIfNeeded();
   const box = (await person.boundingBox())!;
@@ -200,14 +196,11 @@ test("family relationships, cycle rejection, dragging and navigation", async ({
   await page.reload();
   await nav(page, "家系図・人物相関図");
   await expect(
-    page.locator(".graph-person").filter({ hasText: "モルガン・ローレル" }),
+    page.locator(".graph-person").filter({ hasText: "人物A" }),
   ).not.toHaveAttribute("style", before!);
-  await page
-    .locator(".graph-person")
-    .filter({ hasText: "モルガン・ローレル" })
-    .click();
+  await page.locator(".graph-person").filter({ hasText: "人物A" }).click();
   await expect(
-    page.getByRole("heading", { name: "モルガン・ローレル", exact: true }),
+    page.getByRole("heading", { name: "人物A", exact: true }),
   ).toBeVisible();
 });
 test("timeline ordering, scoped events, clue status", async ({ page }) => {
@@ -221,16 +214,12 @@ test("timeline ordering, scoped events, clue status", async ({ page }) => {
   await page.getByRole("button", { name: "作成して編集" }).click();
   await page.getByLabel("年代（共通暦・数字）").fill("-100");
   await page.getByRole("button", { name: "関連リンクを追加" }).click();
-  await page
-    .getByRole("button", { name: /ローレル家.*明日も花は咲く/ })
-    .click();
+  await page.getByRole("button", { name: /テスト家.*検証用の物語/ }).click();
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
   await expect(page.locator(".timeline-card").first()).toContainText(
     "庭の誕生",
   );
-  await page
-    .getByLabel("年表の対象")
-    .selectOption({ label: "ローレル家の年表" });
+  await page.getByLabel("年表の対象").selectOption({ label: "テスト家の年表" });
   await expect(page.locator(".timeline-card")).toHaveCount(2);
   await nav(page, "伏線・謎");
   await page.locator(".entry-card").first().click();
@@ -274,7 +263,7 @@ test("backup download, invalid backup protection, restore and Markdown export", 
   await expect(page.getByRole("dialog")).toContainText("1 プロジェクト・10 件");
   await page.getByRole("button", { name: "全データを置き換えて復元" }).click();
   await expect(
-    page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
+    page.getByRole("heading", { name: "検証用の物語", exact: true }),
   ).toBeVisible();
   await saved(page);
   if (test.info().project.name === "android")
@@ -284,7 +273,7 @@ test("backup download, invalid backup protection, restore and Markdown export", 
     .click();
   const md = page.waitForEvent("download");
   await page
-    .getByRole("button", { name: "「明日も花は咲く」を書き出す" })
+    .getByRole("button", { name: "「検証用の物語」を書き出す" })
     .click();
   expect((await md).suggestedFilename()).toContain(".md");
 });
@@ -294,7 +283,7 @@ test("responsive layout and PWA offline cold reload", async ({
 }) => {
   await page.goto("./");
   await expect(
-    page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
+    page.getByRole("heading", { name: "検証用の物語", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: `/tmp/storymaker-${test.info().project.name}.png`,
@@ -311,7 +300,7 @@ test("responsive layout and PWA offline cold reload", async ({
   await context.setOffline(true);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
+    page.getByRole("heading", { name: "検証用の物語", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".offline-banner")).toContainText(
     "オフラインで編集中",
@@ -327,7 +316,7 @@ test("responsive layout and PWA offline cold reload", async ({
   await context.setOffline(false);
 });
 
-test("image persistence, light mode, sample isolation and project deletion undo", async ({
+test("image persistence, light mode and project deletion undo", async ({
   page,
 }) => {
   await page.goto("./");
@@ -349,7 +338,14 @@ test("image persistence, light mode, sample isolation and project deletion undo"
     .click();
   await page.getByRole("button", { name: "ダークモード", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-  await page.getByRole("button", { name: "別のサンプルとして追加" }).click();
+  await switcher(page);
+  await page
+    .getByRole("button", { name: "新規プロジェクト", exact: true })
+    .click();
+  await page.getByRole("textbox", { name: /作品名/ }).fill("削除確認用の作品");
+  await page
+    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .click();
   await saved(page);
   await switcher(page);
   await page
@@ -357,13 +353,11 @@ test("image persistence, light mode, sample isolation and project deletion undo"
     .click();
   await expect(page.locator(".project-card")).toHaveCount(2);
   await expect(
-    page
-      .locator(".project-card")
-      .filter({ hasText: "明日も花は咲く（サンプル）" }),
+    page.locator(".project-card").filter({ hasText: "削除確認用の作品" }),
   ).toHaveCount(1);
   await page
     .getByRole("button", {
-      name: "明日も花は咲く（サンプル）を削除",
+      name: "削除確認用の作品を削除",
       exact: true,
     })
     .click();
