@@ -2,7 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+const base = process.env.VITE_BASE_PATH || "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -17,22 +20,24 @@ export default defineConfig({
         theme_color: "#111a17",
         background_color: "#111a17",
         display: "standalone",
-        start_url: "/",
+        id: base,
+        scope: base,
+        start_url: base,
         icons: [
           {
-            src: "/icon-192.png",
+            src: `${base}icon-192.png`,
             sizes: "192x192",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon-512.png",
+            src: `${base}icon-512.png`,
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/icon.svg",
+            src: `${base}icon.svg`,
             sizes: "any",
             type: "image/svg+xml",
             purpose: "any",
@@ -42,7 +47,7 @@ export default defineConfig({
       workbox: {
         clientsClaim: true,
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        navigateFallback: "/index.html",
+        navigateFallback: `${base}index.html`,
       },
     }),
   ],

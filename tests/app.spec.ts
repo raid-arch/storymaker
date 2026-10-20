@@ -31,7 +31,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("./");
   await expect(
     page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
   ).toBeVisible();
@@ -83,7 +83,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
 test("project creation, hierarchy, edit, persist, and safe sample addition", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("./");
   await switcher(page);
   await page
     .getByRole("button", { name: "新規プロジェクト", exact: true })
@@ -127,7 +127,7 @@ test("project creation, hierarchy, edit, persist, and safe sample addition", asy
   ).toBeVisible();
 });
 test("world categories, tags and full-text truth search", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await nav(page, "世界観データベース");
   await page.getByRole("button", { name: "カテゴリ", exact: true }).click();
   await page.getByLabel("カテゴリ名").fill("言語・文字");
@@ -154,7 +154,7 @@ test("world categories, tags and full-text truth search", async ({ page }) => {
 test("family relationships, cycle rejection, dragging and navigation", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("./");
   await nav(page, "キャラクター");
   await add(page, "親");
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
@@ -211,7 +211,7 @@ test("family relationships, cycle rejection, dragging and navigation", async ({
   ).toBeVisible();
 });
 test("timeline ordering, scoped events, clue status", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await nav(page, "年表");
   await page.getByRole("button", { name: "出来事を追加" }).click();
   await page
@@ -244,7 +244,7 @@ test("timeline ordering, scoped events, clue status", async ({ page }) => {
 test("backup download, invalid backup protection, restore and Markdown export", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("./");
   if (test.info().project.name === "android")
     await page.getByRole("button", { name: "メニューを開く" }).click();
   await page
@@ -292,7 +292,7 @@ test("responsive layout and PWA offline cold reload", async ({
   page,
   context,
 }) => {
-  await page.goto("/");
+  await page.goto("./");
   await expect(
     page.getByRole("heading", { name: "明日も花は咲く", exact: true }),
   ).toBeVisible();
@@ -330,7 +330,7 @@ test("responsive layout and PWA offline cold reload", async ({
 test("image persistence, light mode, sample isolation and project deletion undo", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page
     .getByRole("button", { name: "プロジェクトを編集", exact: true })
     .click();

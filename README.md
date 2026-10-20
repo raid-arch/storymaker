@@ -69,3 +69,18 @@ E2Eテストは本番ビルドと `/usr/bin/chromium` を使用します。他�
 - `src/style.css`: ダーク／ライトテーマ、PCとスマートフォンのレイアウト
 
 初期版では長文はプレーンテキストで編集します。自動同期・共同編集・リッチテキスト・独自暦の変換は実装範囲に含めていません。数十世代の家系を表現できますが、数万件のデータに対する仮想スクロールや全文索引は未実装です。
+
+## GitHub Pagesへの公開
+
+`.github/workflows/pages.yml` により、mainへのpush時に型チェック・テスト・ビルド後にGitHub Pagesへデプロイします。GitHubのリポジトリの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。初回の設定後はActionsの **Publish GitHub Pages → Run workflow** を実行するか、失敗した実行を再実行します。
+
+公開先は `https://raid-arch.github.io/storymaker/` です。有効化とデプロイの成功後に利用できます。ビルドでは `VITE_BASE_PATH=/storymaker/` を指定し、画像・アプリ・サービスワーカー・ホーム画面からの起動先をそのパスに揃えます。ローカル開発では未指定の `/` を使用します。
+
+```bash
+VITE_BASE_PATH=/storymaker/ npm run build
+VITE_BASE_PATH=/storymaker/ npm run preview -- --port 4173 --strictPort
+# Pages配下のURL・オフライン動作も検証
+VITE_BASE_PATH=/storymaker/ npm run test:e2e
+```
+
+GitHubに公開するのはアプリと初期サンプルです。ブラウザ内で作成した作品データはアップロードされません。公開URLのIndexedDBは開発環境とは別なので、必要なデータはJSONで移行してください。
