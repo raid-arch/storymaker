@@ -1,6 +1,6 @@
 import { validAppearance } from "./appearance";
 import type { Appearance } from "./appearance";
-export type Status = "確定" | "仮設定" | "検討中" | "没案";
+export type Status = string;
 export type Kind = "character" | "world" | "event" | "clue";
 export const statuses: Status[] = ["確定", "仮設定", "検討中", "没案"];
 export const categories = [
@@ -28,7 +28,7 @@ export interface Project {
   status: Status;
   lore: string;
   truth: string;
-  type: "シリーズ" | "作品" | "章";
+  type: string;
   parentId: string;
   updatedAt: string;
 }
@@ -64,7 +64,7 @@ export interface Relation {
   projectId: string;
   from: string;
   to: string;
-  type: (typeof relationTypes)[number];
+  type: string;
   note: string;
 }
 export interface Data {
@@ -77,6 +77,32 @@ export interface Data {
   positions: Record<string, { x: number; y: number }>;
   theme: "dark" | "light";
   lastBackup: string;
+}
+export function uniqueOptions(values: readonly string[]): string[] {
+  return [...new Set(values.map((v) => v.trim()).filter(Boolean))];
+}
+export function statusOptions(data: Data): string[] {
+  return uniqueOptions([
+    ...statuses,
+    ...data.projects.map((p) => p.status),
+    ...data.entries.map((e) => e.status),
+  ]);
+}
+export function categoryOptions(data: Data): string[] {
+  return uniqueOptions([
+    ...data.categories,
+    ...data.entries.filter((e) => e.kind === "world").map((e) => e.category),
+  ]);
+}
+export function fieldOptions(
+  data: Data,
+  key: string,
+  defaults: readonly string[] = [],
+): string[] {
+  return uniqueOptions([
+    ...defaults,
+    ...data.entries.map((e) => e.fields[key] || ""),
+  ]);
 }
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
@@ -102,7 +128,7 @@ export function newEntry(projectId: string, kind: Kind): Entry {
     kind,
     name: "",
     subtitle: "",
-    category: kind === "world" ? categories[0] : "",
+    category: "",
     status: "仮設定",
     tags: [],
     image: "",
@@ -271,7 +297,7 @@ export function validateBackup(raw: unknown): Data {
     return fail();
   const str = (v: unknown) => typeof v === "string";
   const list = (v: unknown): v is string[] => Array.isArray(v) && v.every(str);
-  const status = (v: Status) => statuses.includes(v);
+  const status = (v: unknown) => typeof v === "string";
   const obj = (v: unknown): v is Record<string, string> =>
     !!v &&
     typeof v === "object" &&
@@ -293,7 +319,7 @@ export function validateBackup(raw: unknown): Data {
       ].every((k) => str(p[k as keyof Project])) ||
       !list(p.tags) ||
       !status(p.status) ||
-      !["シリーズ", "作品", "章"].includes(p.type) ||
+      !str(p.type) ||
       !p.id ||
       ids.has(p.id)
     )
@@ -357,7 +383,8 @@ export function validateBackup(raw: unknown): Data {
       relationIds.has(r.id) ||
       !str(r.note) ||
       !ids.has(r.projectId) ||
-      !relationTypes.includes(r.type) ||
+      !str(r.type) ||
+      !r.type.trim() ||
       r.from === r.to
     )
       return fail();

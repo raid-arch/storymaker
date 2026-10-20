@@ -8,7 +8,15 @@ import {
   ExternalLink,
   Link2,
 } from "lucide-react";
-import { descendants, kindLabels, statuses } from "./model";
+import {
+  descendants,
+  kindLabels,
+  statusOptions,
+  categoryOptions,
+  fieldOptions,
+  uniqueOptions,
+} from "./model";
+import FreeTextInput from "./FreeTextInput";
 import type { Data, Entry, Project } from "./model";
 export function TagsInput({
   value,
@@ -170,17 +178,18 @@ export function ProjectForm({
       <div className="form-row">
         <label>
           種類
-          <select
-            aria-label="種類"
+          <FreeTextInput
+            label="種類"
             value={value.type}
-            onChange={(e) =>
-              onChange({ ...value, type: e.target.value as Project["type"] })
-            }
-          >
-            {["シリーズ", "作品", "章"].map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
+            onChange={(type) => onChange({ ...value, type })}
+            suggestions={uniqueOptions([
+              "シリーズ",
+              "作品",
+              "章",
+              ...data.projects.map((p) => p.type),
+            ])}
+            placeholder="例：作品、設定集、短編集"
+          />
         </label>
         <label>
           上位プロジェクト
@@ -212,17 +221,13 @@ export function ProjectForm({
       </label>
       <label>
         設定の状態
-        <select
-          aria-label="設定の状態"
+        <FreeTextInput
+          label="設定の状態"
           value={value.status}
-          onChange={(e) =>
-            onChange({ ...value, status: e.target.value as Project["status"] })
-          }
-        >
-          {statuses.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
+          onChange={(status) => onChange({ ...value, status })}
+          suggestions={statusOptions(data)}
+          placeholder="例：確定、要調査、作者だけの設定"
+        />
       </label>
       <label>
         タグ
@@ -331,7 +336,9 @@ export function EntryEditor({
           <section className="panel editor-section">
             <div className="section-heading">
               <h2>基本情報</h2>
-              <span className="muted small">入力した内容を自動保存</span>
+              <span className="muted small">
+                自由に記述・候補は任意・自動保存
+              </span>
             </div>
             <ImageInput
               value={entry.image}
@@ -358,63 +365,58 @@ export function EntryEditor({
             <div className="form-row">
               <label>
                 設定の状態
-                <select
-                  aria-label="設定の状態"
+                <FreeTextInput
+                  label="設定の状態"
                   value={entry.status}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      status: e.target.value as Entry["status"],
-                    })
-                  }
-                >
-                  {statuses.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
+                  onChange={(status) => onChange({ ...entry, status })}
+                  suggestions={statusOptions(data)}
+                  placeholder="自由に状態を記述"
+                />
               </label>
               {entry.kind === "world" && (
                 <label>
                   カテゴリ
-                  <select
-                    aria-label="カテゴリ"
+                  <FreeTextInput
+                    label="カテゴリ"
                     value={entry.category}
-                    onChange={(e) =>
-                      onChange({ ...entry, category: e.target.value })
-                    }
-                  >
-                    {data.categories.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
+                    onChange={(category) => onChange({ ...entry, category })}
+                    suggestions={categoryOptions(data)}
+                    placeholder="例：言語・文字、植物、暦"
+                  />
                 </label>
               )}
               {entry.kind === "character" && (
                 <label>
                   生存状況
-                  <select
-                    aria-label="生存状況"
-                    value={entry.fields.生存状況 || "不明"}
-                    onChange={(e) => field("生存状況", e.target.value)}
-                  >
-                    {["生存", "死亡", "行方不明", "不明"].map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
+                  <FreeTextInput
+                    label="生存状況"
+                    value={entry.fields.生存状況 || ""}
+                    onChange={(value) => field("生存状況", value)}
+                    suggestions={fieldOptions(data, "生存状況", [
+                      "生存",
+                      "死亡",
+                      "行方不明",
+                      "不明",
+                    ])}
+                    placeholder="例：転生、封印中、生死の概念なし"
+                  />
                 </label>
               )}
               {entry.kind === "clue" && (
                 <label>
                   回収状況
-                  <select
-                    aria-label="回収状況"
-                    value={entry.fields.回収状況 || "未回収"}
-                    onChange={(e) => field("回収状況", e.target.value)}
-                  >
-                    {["未回収", "回収予定", "回収済み", "保留"].map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
+                  <FreeTextInput
+                    label="回収状況"
+                    value={entry.fields.回収状況 || ""}
+                    onChange={(value) => field("回収状況", value)}
+                    suggestions={fieldOptions(data, "回収状況", [
+                      "未回収",
+                      "回収予定",
+                      "回収済み",
+                      "保留",
+                    ])}
+                    placeholder="例：一部回収、次巻で回収"
+                  />
                 </label>
               )}
             </div>
@@ -423,15 +425,17 @@ export function EntryEditor({
                 <div className="form-row">
                   <label>
                     系統
-                    <select
-                      aria-label="系統"
-                      value={entry.fields.系統 || "未設定"}
-                      onChange={(e) => field("系統", e.target.value)}
-                    >
-                      {["本家", "分家", "未設定"].map((s) => (
-                        <option key={s}>{s}</option>
-                      ))}
-                    </select>
+                    <FreeTextInput
+                      label="系統"
+                      value={entry.fields.系統 || ""}
+                      onChange={(value) => field("系統", value)}
+                      suggestions={fieldOptions(data, "系統", [
+                        "本家",
+                        "分家",
+                        "未設定",
+                      ])}
+                      placeholder="例：傍系、断絶した支流、養家"
+                    />
                   </label>
                   <label>
                     世代（数字）

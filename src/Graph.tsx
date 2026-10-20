@@ -1,6 +1,13 @@
 import { useRef, useState } from "react";
+import FreeTextInput from "./FreeTextInput";
 import { Plus, Minus, Move, RotateCcw, X, Trash2 } from "lucide-react";
-import { familyGenerations, relationTypes, uid } from "./model";
+import {
+  familyGenerations,
+  relationTypes,
+  fieldOptions,
+  uniqueOptions,
+  uid,
+} from "./model";
 import type { Data, Entry, Relation } from "./model";
 export function RelationForm({
   data,
@@ -26,19 +33,24 @@ export function RelationForm({
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   function submit() {
+    const relationType = type.trim();
+    if (!relationType) {
+      setError("関係を記入してください。");
+      return;
+    }
     if (!from || !to || from === to) {
       setError("異なる二人の人物を選択してください。");
       return;
     }
     if (
       data.relations.some(
-        (r) => r.from === from && r.to === to && r.type === type,
+        (r) => r.from === from && r.to === to && r.type === relationType,
       )
     ) {
       setError("同じ関係が登録されています。");
       return;
     }
-    if (type === "親子" || type === "養子") {
+    if (relationType === "親子" || relationType === "養子") {
       const visited = new Set<string>();
       const visit = (id: string): boolean => {
         if (id === from) return true;
@@ -53,7 +65,7 @@ export function RelationForm({
         return;
       }
     }
-    onSave({ id: uid(), projectId, from, to, type, note });
+    onSave({ id: uid(), projectId, from, to, type: relationType, note });
     setTo("");
     setNote("");
     setError("");
@@ -94,15 +106,20 @@ export function RelationForm({
           </label>
           <label>
             関係
-            <select
-              aria-label="関係"
+            <FreeTextInput
+              label="関係"
               value={type}
-              onChange={(e) => setType(e.target.value as Relation["type"])}
-            >
-              {relationTypes.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </select>
+              onChange={setType}
+              suggestions={uniqueOptions([
+                ...relationTypes,
+                ...data.relations.map((r) => r.type),
+              ])}
+              placeholder="例：師弟、契約者、前世の縁"
+              required
+            />
+            <small className="muted">
+              「親子」「養子」は世代の自動配置に使います。それ以外の関係名も自由に登録できます。
+            </small>
           </label>
           <label>
             人物 B（親子・養子の場合は子）
@@ -195,7 +212,7 @@ export function FamilyGraph({
     (e) => e.projectId === projectId && e.kind === "character",
   );
   const chars = all.filter(
-    (e) => filter === "すべて" || e.fields.系統 === filter,
+    (e) => filter === "すべて" || (e.fields.系統 || "").trim() === filter,
   );
   const relations = data.relations.filter(
     (r) =>
@@ -233,15 +250,17 @@ export function FamilyGraph({
     <>
       <div className="graph-toolbar">
         <div className="segmented">
-          {["すべて", "本家", "分家"].map((f) => (
-            <button
-              key={f}
-              className={f === filter ? "active" : ""}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </button>
-          ))}
+          {["すべて", ...fieldOptions(data, "系統", ["本家", "分家"])].map(
+            (f) => (
+              <button
+                key={f}
+                className={f === filter ? "active" : ""}
+                onClick={() => setFilter(f)}
+              >
+                {f}
+              </button>
+            ),
+          )}
         </div>
         <div className="toolbar-actions">
           <button

@@ -45,7 +45,6 @@ import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { load, persist } from "./storage";
 import {
-  categories,
   deleteEntry,
   deleteProject,
   descendants,
@@ -56,7 +55,9 @@ import {
   now,
   searchEntries,
   sortEvents,
-  statuses,
+  statusOptions,
+  categoryOptions,
+  fieldOptions,
   validateBackup,
 } from "./model";
 import type { Data, Entry, Kind, Project } from "./model";
@@ -234,7 +235,7 @@ function Badge({ status }: { status: string }) {
   return (
     <span className={`status status-${status}`}>
       <i />
-      {status}
+      {status || "未設定"}
     </span>
   );
 }
@@ -596,16 +597,17 @@ export default function App() {
     "",
   ).filter(
     (e) =>
-      (category === "すべて" || e.category === category) &&
-      (statusFilter === "すべて" || e.status === statusFilter) &&
-      (clueFilter === "すべて" || e.fields.回収状況 === clueFilter),
+      (category === "すべて" || e.category.trim() === category) &&
+      (statusFilter === "すべて" || e.status.trim() === statusFilter) &&
+      (clueFilter === "すべて" ||
+        (e.fields.回収状況 || "").trim() === clueFilter),
   );
   const timeline = sortEvents(
     projectEntries.filter(
       (e) =>
         e.kind === "event" &&
         (!timelineScope || e.links.includes(timelineScope)) &&
-        (statusFilter === "すべて" || e.status === statusFilter),
+        (statusFilter === "すべて" || e.status.trim() === statusFilter),
     ),
   );
   return (
@@ -1271,7 +1273,7 @@ export default function App() {
                               }
                             </span>
                           </button>
-                          {data.categories.map((c) => (
+                          {categoryOptions(data).map((c) => (
                             <button
                               key={c}
                               className={category === c ? "active" : ""}
@@ -1309,11 +1311,14 @@ export default function App() {
                               onChange={(e) => setClueFilter(e.target.value)}
                             >
                               <option value="すべて">すべての回収状況</option>
-                              {["未回収", "回収予定", "回収済み", "保留"].map(
-                                (s) => (
-                                  <option key={s}>{s}</option>
-                                ),
-                              )}
+                              {fieldOptions(data, "回収状況", [
+                                "未回収",
+                                "回収予定",
+                                "回収済み",
+                                "保留",
+                              ]).map((s) => (
+                                <option key={s}>{s}</option>
+                              ))}
                             </select>
                           )}
                           {view === "event" && (
@@ -1374,7 +1379,7 @@ export default function App() {
                             onChange={(e) => setStatusFilter(e.target.value)}
                           >
                             <option value="すべて">すべての状態</option>
-                            {statuses.map((s) => (
+                            {statusOptions(data).map((s) => (
                               <option key={s}>{s}</option>
                             ))}
                           </select>
@@ -1758,11 +1763,7 @@ export default function App() {
                 ...newEntry(currentId, newKind),
                 name: newName.trim(),
                 category:
-                  newKind === "world" && category !== "すべて"
-                    ? category
-                    : newKind === "world"
-                      ? data.categories[0] || categories[0]
-                      : "",
+                  newKind === "world" && category !== "すべて" ? category : "",
               };
               change((d) => ({ ...d, entries: [...d.entries, entry] }));
               setNewKind(null);
@@ -1890,7 +1891,7 @@ export default function App() {
               e.preventDefault();
               const c = categoryDraft.trim();
               if (!c) return;
-              if (data.categories.includes(c)) {
+              if (categoryOptions(data).includes(c)) {
                 setNotice("同じカテゴリが存在します。");
                 return;
               }

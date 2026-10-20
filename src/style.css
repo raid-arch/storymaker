@@ -3824,3 +3824,127 @@ kbd {
     width: 100%;
   }
 }
+.free-text-field {
+  position: relative;
+  margin-top: 7px;
+  min-width: 0;
+  color: var(--text);
+}
+.free-text-control {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--input);
+}
+.free-text-control:focus-within {
+  border-color: var(--green);
+  outline: 1px solid var(--green);
+}
+.free-text-control input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  margin: 0;
+  outline: none !important;
+  padding: 11px 12px;
+}
+.free-text-control input::-webkit-calendar-picker-indicator {
+  display: none !important;
+}
+.free-text-toggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 10px;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+  font-size: calc(10px * var(--text-scale, 1));
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.free-text-toggle:hover,
+.free-text-toggle[aria-expanded="true"] {
+  color: var(--green);
+  background: var(--green-dim);
+}
+.free-text-choices {
+  position: absolute;
+  z-index: 15;
+  left: 0;
+  right: 0;
+  top: calc(100% + 5px);
+  max-height: 225px;
+  overflow: auto;
+  padding: 5px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+.free-text-choices button {
+  display: block;
+  text-align: left;
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: calc(12px * var(--text-scale, 1));
+  overflow-wrap: anywhere;
+}
+.free-text-choices button:hover,
+.free-text-choices button:focus-visible {
+  background: var(--green-dim);
+  color: var(--green);
+}
+.graph-toolbar .segmented {
+  max-width: 100%;
+  overflow: auto;
+}
+@media (max-width: 720px) {
+  .free-text-control input {
+    min-height: 46px;
+  }
+  .free-text-toggle {
+    min-width: 50px;
+    justify-content: center;
+    padding: 0 7px;
+  }
+  .free-text-toggle span {
+    display: none;
+  }
+  .free-text-choices button {
+    min-height: 44px;
+    font-size: calc(13px * var(--text-scale, 1));
+  }
+}
+/* Custom names can be longer than the built-in suggestions. */
+.status {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.status > i {
+  flex-shrink: 0;
+}
+.card-top .status {
+  max-width: 60%;
+}
+.category-bar button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hero-kicker > span {
+  max-width: 55%;
+  overflow-wrap: anywhere;
+}
+.project-card-body .eyebrow {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.branch-label {
+  max-width: calc(100% - 35px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

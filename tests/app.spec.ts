@@ -87,7 +87,7 @@ test("project creation, hierarchy, edit, persist, and safe sample addition", asy
     .getByRole("button", { name: "新規プロジェクト", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("月の図書館");
-  await page.getByLabel("種類", { exact: true }).selectOption("シリーズ");
+  await page.getByLabel("種類", { exact: true }).fill("シリーズ");
   await page.getByLabel("説明", { exact: true }).fill("新しい物語の記録");
   await page
     .getByRole("button", { name: "プロジェクトを作成", exact: true })
@@ -112,7 +112,7 @@ test("project creation, hierarchy, edit, persist, and safe sample addition", asy
     .getByRole("button", { name: "新規プロジェクト", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("第一章");
-  await page.getByLabel("種類", { exact: true }).selectOption("章");
+  await page.getByLabel("種類", { exact: true }).fill("章");
   await page
     .getByLabel("上位プロジェクト")
     .selectOption({ label: "月の図書館" });
@@ -223,7 +223,7 @@ test("timeline ordering, scoped events, clue status", async ({ page }) => {
   await expect(page.locator(".timeline-card")).toHaveCount(2);
   await nav(page, "伏線・謎");
   await page.locator(".entry-card").first().click();
-  await page.getByLabel("回収状況", { exact: true }).selectOption("回収済み");
+  await page.getByLabel("回収状況", { exact: true }).fill("回収済み");
   await page.getByLabel("真相", { exact: true }).fill("別の系統から継承した");
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
   await page.getByLabel("回収状況で絞り込み").selectOption("回収済み");

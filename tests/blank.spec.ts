@@ -61,6 +61,7 @@ test("no sample import control or personalized preview is exposed in a fresh app
   page,
 }) => {
   await page.goto("./");
+  await expect(page.getByRole("heading", {name:"あなたの物語を、ここから。"})).toBeVisible();
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
     await page.getByRole("button", { name: "メニューを開く" }).click();
   await page
