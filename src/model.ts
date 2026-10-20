@@ -1,3 +1,5 @@
+import { validAppearance } from "./appearance";
+import type { Appearance } from "./appearance";
 export type Status = "確定" | "仮設定" | "検討中" | "没案";
 export type Kind = "character" | "world" | "event" | "clue";
 export const statuses: Status[] = ["確定", "仮設定", "検討中", "没案"];
@@ -66,6 +68,7 @@ export interface Relation {
   note: string;
 }
 export interface Data {
+  appearance?: Appearance;
   version: 1;
   projects: Project[];
   entries: Entry[];
@@ -237,16 +240,14 @@ export function seed(): Data {
     version: 1,
     projects: [project],
     entries: [...chars, ...world, event, clue],
-    relations: chars
-      .slice(1)
-      .map((c) => ({
-        id: uid(),
-        projectId: "laurel",
-        from: "morgan",
-        to: c.id,
-        type: "兄弟姉妹",
-        note: "ローレル家の五人きょうだい",
-      })),
+    relations: chars.slice(1).map((c) => ({
+      id: uid(),
+      projectId: "laurel",
+      from: "morgan",
+      to: c.id,
+      type: "兄弟姉妹",
+      note: "ローレル家の五人きょうだい",
+    })),
     categories: [...categories],
     positions: {},
     theme: "dark",
@@ -377,6 +378,7 @@ export function validateBackup(raw: unknown): Data {
   if (!raw || typeof raw !== "object") return fail();
   const d = raw as Data;
   if (
+    (d.appearance !== undefined && !validAppearance(d.appearance)) ||
     d.version !== 1 ||
     !Array.isArray(d.projects) ||
     !Array.isArray(d.entries) ||

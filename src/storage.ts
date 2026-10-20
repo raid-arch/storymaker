@@ -19,3 +19,17 @@ export async function persist(data: Data): Promise<void> {
   const db = await database();
   await db.put("state", data, "main");
 }
+
+// Connection keys are kept separately from story data and never exported.
+export async function readLocalSetting<T>(key: string): Promise<T | undefined> {
+  const db = await database();
+  return db.get("state", key);
+}
+export async function writeLocalSetting(
+  key: string,
+  value: unknown,
+): Promise<void> {
+  const db = await database();
+  if (value === undefined) await db.delete("state", key);
+  else await db.put("state", value, key);
+}

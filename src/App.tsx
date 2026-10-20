@@ -38,6 +38,9 @@ import {
   Trash2,
   Pencil,
   SlidersHorizontal,
+  Palette,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -62,6 +65,10 @@ import type { Data, Entry, Kind, Project } from "./model";
 import { EntryEditor, ProjectForm } from "./Editors";
 import { FamilyGraph, RelationForm } from "./Graph";
 import InstallApp from "./InstallApp";
+import GitHubSync from "./GitHubSync";
+import AppearanceSettings from "./AppearanceSettings";
+import { defaultAppearance } from "./appearance";
+import type { DashboardSection } from "./appearance";
 type View =
   | "dashboard"
   | "character"
@@ -332,7 +339,17 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!data) return;
-    document.documentElement.dataset.theme = data.theme;
+    const root = document.documentElement;
+    const preferences = data.appearance || defaultAppearance();
+    root.dataset.theme = data.theme;
+    root.dataset.accent = preferences.accent;
+    root.dataset.font = preferences.font;
+    root.dataset.density = preferences.density;
+    root.dataset.layout = preferences.layout;
+    root.style.setProperty(
+      "--text-scale",
+      String({ small: 1, medium: 1.1, large: 1.25 }[preferences.fontSize]),
+    );
     const revision = ++saveRevision.current;
     setSaveState("保存中…");
     const timer = setTimeout(() => {
@@ -514,6 +531,20 @@ export default function App() {
       .toLowerCase()
       .includes(search.trim().toLowerCase()),
   );
+  const preferences = data.appearance || defaultAppearance();
+  const customize = () => {
+    navigate("settings");
+    requestAnimationFrame(() => {
+      const section = document.getElementById("appearance-settings");
+      section?.scrollIntoView({ block: "start", behavior: "smooth" });
+      section?.focus({ preventScroll: true });
+    });
+  };
+  const homeSection = (id: DashboardSection) => ({
+    "data-home-section": id,
+    hidden: !preferences.dashboard.includes(id),
+    style: { order: preferences.dashboard.indexOf(id) },
+  });
   const updateEntry = (entry: Entry) =>
     change(
       (d) => ({
@@ -812,6 +843,13 @@ export default function App() {
         )}
         <InstallApp />
         <main className="main-content">
+          <GitHubSync
+            data={data}
+            saveState={saveState}
+            expanded={view === "settings" && !search && !selected}
+            onOpen={() => navigate("settings")}
+            onReplace={(incoming) => change(() => incoming)}
+          />
           {search.trim() ? (
             <>
               <div className="page-title">
@@ -882,17 +920,26 @@ export default function App() {
                       <h1>物語の庭へ、おかえりなさい。</h1>
                       <p>ひとつひとつの設定が、あなたの世界をつくっていく。</p>
                     </div>
-                    <button
-                      className="button primary"
-                      onClick={() => setQuick(true)}
-                    >
-                      <Plus size={17} />
-                      新しい設定<span className="desktop-only">を追加</span>
-                    </button>
+                    <div className="page-actions">
+                      <button className="button subtle" onClick={customize}>
+                        <Palette size={16} />
+                        カスタマイズ
+                      </button>
+                      <button
+                        className="button primary"
+                        onClick={() => setQuick(true)}
+                      >
+                        <Plus size={17} />
+                        新しい設定<span className="desktop-only">を追加</span>
+                      </button>
+                    </div>
                   </div>
                   {project ? (
-                    <>
-                      <section className="project-hero">
+                    <div className="dashboard-content">
+                      <section
+                        className="project-hero"
+                        {...homeSection("hero")}
+                      >
                         <div className="hero-content">
                           <span className="hero-kicker">
                             <i />
@@ -933,7 +980,7 @@ export default function App() {
                           EVERY WORLD BEGINS WITH A SEED.
                         </span>
                       </section>
-                      <div className="stats-grid">
+                      <div className="stats-grid" {...homeSection("stats")}>
                         {(
                           [
                             {
@@ -993,7 +1040,7 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      <section className="section">
+                      <section className="section" {...homeSection("recent")}>
                         <div className="section-heading">
                           <h2>
                             <span className="section-mark" />
@@ -1034,7 +1081,10 @@ export default function App() {
                         )}
                       </section>
                       <div className="dashboard-bottom">
-                        <section className="panel story-thread">
+                        <section
+                          className="panel story-thread"
+                          {...homeSection("mysteries")}
+                        >
                           <div className="section-heading">
                             <h2>
                               <Sparkles size={17} />
@@ -1077,7 +1127,10 @@ export default function App() {
                             </p>
                           )}
                         </section>
-                        <section className="panel backup-callout">
+                        <section
+                          className="panel backup-callout"
+                          {...homeSection("backup")}
+                        >
                           <div className="backup-icon">
                             <ShieldCheck size={26} strokeWidth={1.3} />
                           </div>
@@ -1095,7 +1148,16 @@ export default function App() {
                           </div>
                         </section>
                       </div>
-                    </>
+                      {!preferences.dashboard.length && (
+                        <div className="empty-state panel">
+                          <Palette size={32} />
+                          <p>ホーム画面の項目はすべて非表示になっています。</p>
+                          <button className="button subtle" onClick={customize}>
+                            表示項目を選ぶ
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="empty-state panel">
                       <Sprout size={45} />
@@ -1275,6 +1337,37 @@ export default function App() {
                                   </option>
                                 ))}
                             </select>
+                          )}
+                          {view !== "event" && (
+                            <div
+                              className="view-switch"
+                              aria-label="一覧の表示方法"
+                            >
+                              {(
+                                [
+                                  ["cards", "カード表示", LayoutGrid],
+                                  ["list", "リスト表示", List],
+                                ] as const
+                              ).map(([id, label, Icon]) => (
+                                <button
+                                  key={id}
+                                  className="icon-button"
+                                  aria-label={label}
+                                  aria-pressed={preferences.layout === id}
+                                  onClick={() =>
+                                    change((d) => ({
+                                      ...d,
+                                      appearance: {
+                                        ...preferences,
+                                        layout: id,
+                                      },
+                                    }))
+                                  }
+                                >
+                                  <Icon size={17} />
+                                </button>
+                              ))}
+                            </div>
                           )}
                           <SlidersHorizontal size={14} />
                           <select
@@ -1459,6 +1552,21 @@ export default function App() {
                       <p>あなたの物語は、あなたの手元に。</p>
                     </div>
                   </div>
+                  <AppearanceSettings
+                    value={preferences}
+                    theme={data.theme}
+                    onChange={(appearance) =>
+                      change((d) => ({ ...d, appearance }), "appearance")
+                    }
+                    onTheme={(theme) => change((d) => ({ ...d, theme }))}
+                    onReset={() =>
+                      change((d) => ({
+                        ...d,
+                        theme: "dark",
+                        appearance: defaultAppearance(),
+                      }))
+                    }
+                  />
                   <div className="settings-grid">
                     <section className="panel settings-panel">
                       <span className="settings-icon">
@@ -1467,7 +1575,7 @@ export default function App() {
                       <h2>大切なデータを守る</h2>
                       <p>
                         すべての情報はこのブラウザの IndexedDB
-                        に自動保存されます。端末間の自動同期はありません。ブラウザのデータ削除や端末故障に備えて、定期的にJSONを書き出してください。
+                        に自動保存されます。非公開GitHubとの同期を接続すると端末間でも共有できます。ブラウザのデータ削除や端末故障に備えて、定期的にJSONを書き出してください。
                       </p>
                       <div className="backup-info">
                         <span>前回のJSON書き出し</span>
