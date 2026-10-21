@@ -46,3 +46,5 @@ cp release-artifacts/android-release.json public/
 ## 検証
 
 型チェックと既存の保存・バックアップ・オフラインのブラウザテストに加え、Gradleのrelease assemble、Android Lint、`apksigner verify` を行う。APKの同梱ファイルに作品データ・サービスワーカー・署名秘密鍵がないことを確認する。署名済みAPKのSHA-256はReleaseの `SHA256SUMS` と比較できる。
+
+今回の環境での確認結果：TypeScript型チェック、単体テスト63件、PC・Pixel 7相当のブラウザテスト83件、release assemble・Android Lint・APK署名と公開ファイルのSHA-256検証が完了。API 35ソフトウェアエミュレーターへの署名付きAPKの新規インストール・更新インストールも成功した。ただし、KVMを使えないこのエミュレーターではSystem UIのANRとWebViewレンダラーのSIGTRAPが発生し、アプリ画面の確認は完了できていない。実機での起動・ファイル出力・APK更新画面は未確認であり、ビルド成功と区別する。
