@@ -32,7 +32,17 @@ export function RelationForm({
   const [type, setType] = useState<Relation["type"]>("親子");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [validFrom, setValidFrom] = useState<number | undefined>();
+  const [validTo, setValidTo] = useState<number | undefined>();
   function submit() {
+    if (
+      validFrom !== undefined &&
+      validTo !== undefined &&
+      validFrom > validTo
+    ) {
+      setError("関係の開始年と終了年の前後を確認してください。");
+      return;
+    }
     const relationType = type.trim();
     if (!relationType) {
       setError("関係を記入してください。");
@@ -65,7 +75,16 @@ export function RelationForm({
         return;
       }
     }
-    onSave({ id: uid(), projectId, from, to, type: relationType, note });
+    onSave({
+      id: uid(),
+      projectId,
+      from,
+      to,
+      type: relationType,
+      note,
+      validFrom,
+      validTo,
+    });
     setTo("");
     setNote("");
     setError("");
@@ -139,6 +158,38 @@ export function RelationForm({
                 ))}
             </select>
           </label>
+          <div className="form-row">
+            <label>
+              関係の開始年
+              <input
+                type="number"
+                step="any"
+                value={validFrom ?? ""}
+                onChange={(event) =>
+                  setValidFrom(
+                    event.target.value === ""
+                      ? undefined
+                      : Number(event.target.value),
+                  )
+                }
+              />
+            </label>
+            <label>
+              関係の終了年
+              <input
+                type="number"
+                step="any"
+                value={validTo ?? ""}
+                onChange={(event) =>
+                  setValidTo(
+                    event.target.value === ""
+                      ? undefined
+                      : Number(event.target.value),
+                  )
+                }
+              />
+            </label>
+          </div>
           <label>
             関係のメモ
             <input value={note} onChange={(e) => setNote(e.target.value)} />
@@ -186,14 +237,18 @@ export function FamilyGraph({
   onOpen,
   onMove,
   onReset,
+  onAutoLayout,
   onAdd,
   onRelation,
+  readOnly = false,
 }: {
   data: Data;
+  readOnly?: boolean;
   projectId: string;
   onOpen: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onReset: () => void;
+  onAutoLayout: () => void;
   onAdd: () => void;
   onRelation: () => void;
 }) {
@@ -264,17 +319,33 @@ export function FamilyGraph({
         </div>
         <div className="toolbar-actions">
           <button
+            className="button subtle"
+            disabled={readOnly}
+            onClick={onAutoLayout}
+          >
+            血縁から自動配置
+          </button>
+          <button
             className={`button subtle ${moving ? "selected" : ""}`}
+            disabled={readOnly}
             onClick={() => setMoving(!moving)}
           >
             <Move size={15} />
             {moving ? "移動を完了" : "配置を編集"}
           </button>
-          <button className="button subtle" onClick={onRelation}>
+          <button
+            className="button subtle"
+            disabled={readOnly}
+            onClick={onRelation}
+          >
             <Plus size={15} />
             関係をつなぐ
           </button>
-          <button className="button primary" onClick={onAdd}>
+          <button
+            className="button primary"
+            disabled={readOnly}
+            onClick={onAdd}
+          >
             <Plus size={15} />
             人物を追加
           </button>
@@ -355,10 +426,10 @@ export function FamilyGraph({
                   style={{
                     left: positions[c.id].x,
                     top: positions[c.id].y,
-                    touchAction: moving ? "none" : "auto",
+                    touchAction: moving && !readOnly ? "none" : "auto",
                   }}
                   onPointerDown={(e) => {
-                    if (!moving) return;
+                    if (!moving || readOnly) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
                     drag.current = {
                       id: c.id,
@@ -381,14 +452,25 @@ export function FamilyGraph({
                         Math.max(40, d.y + dy),
                       );
                   }}
-                  onPointerUp={() => {
+                  onPointerUp={(event) => {
+                    const d = drag.current;
+                    if (d && d.id === c.id) {
+                      const dx = (event.clientX - d.startX) / zoom,
+                        dy = (event.clientY - d.startY) / zoom;
+                      if (Math.abs(dx) + Math.abs(dy) > 5)
+                        onMove(
+                          c.id,
+                          Math.max(10, d.x + dx),
+                          Math.max(40, d.y + dy),
+                        );
+                    }
                     drag.current = null;
                   }}
                   onPointerCancel={() => {
                     drag.current = null;
                   }}
                   onClick={() => {
-                    if (!moving) onOpen(c.id);
+                    if (!moving || readOnly) onOpen(c.id);
                   }}
                 >
                   <div className="graph-person-top">
@@ -430,6 +512,7 @@ export function FamilyGraph({
           <i />
           <button
             className="text-button"
+            disabled={readOnly}
             onClick={() => {
               setZoom(0.85);
               onReset();

@@ -185,7 +185,8 @@ test("family relationships, cycle rejection, dragging and navigation", async ({
   await page.getByRole("button", { name: "配置を編集", exact: true }).click();
   const person = page.locator(".graph-person").filter({ hasText: "人物A" });
   const before = await person.getAttribute("style");
-  await person.scrollIntoViewIfNeeded();
+  // Center the node away from the sticky toolbar before sending raw pointer coordinates.
+  await person.evaluate(el=>el.scrollIntoView({block:"center",inline:"nearest",behavior:"instant"}));
   const box = (await person.boundingBox())!;
   await page.mouse.move(box.x + 30, box.y + 30);
   await page.mouse.down();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Sprout,
   LayoutDashboard,
@@ -73,7 +73,14 @@ import GitHubSync from "./GitHubSync";
 import AppearanceSettings from "./AppearanceSettings";
 import { defaultAppearance } from "./appearance";
 import type { DashboardSection } from "./appearance";
-import StudioHub from "./studio/StudioHub";
+import { PublicReader } from "./studio/PublicPanel";
+import { searchStudio } from "./studio/search";
+import { publicDocument } from "./studio/publication";
+import { familyLayout } from "./studio/family";
+const StudioHub = lazy(() => import("./studio/StudioHub"));
+import { TimeSwitcher, EraEntryPreview } from "./studio/TimeSwitcher";
+import { dataAtTime } from "./studio/time";
+import type { TimeSelection } from "./studio/time";
 import { checkpoint, rememberChanges } from "./studio/model";
 import type { StudioTab } from "./studio/model";
 type View =
@@ -234,6 +241,9 @@ export default function App() {
   dataRef.current = data;
   const [studioTab, setStudioTab] = useState<StudioTab>("history");
   const [studioFocus, setStudioFocus] = useState("");
+  const [timeSelection, setTimeSelection] = useState<TimeSelection>({
+    eraId: "",
+  });
   const [saveState, setSaveState] = useState("保存済み");
   const [saveError, setSaveError] = useState("");
   const saveQueue = useRef(Promise.resolve());
@@ -273,6 +283,7 @@ export default function App() {
     kind: "project" | "entry";
     id: string;
   } | null>(null);
+  const [publicPreview, setPublicPreview] = useState("");
   const [undoNotice, setUndoNotice] = useState(false);
   const [imported, setImported] = useState<Data | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -480,8 +491,16 @@ export default function App() {
     setStudioFocus(id);
   }
   function open(id: string) {
-    const e = data?.entries.find((x) => x.id === id);
+    const e = dataRef.current?.entries.find((x) => x.id === id);
     if (e) {
+      if (e.projectId !== projectId) setTimeSelection({ eraId: "" });
+      else if (
+        (timeSelection.eraId || timeSelection.year !== undefined) &&
+        !readingData.entries.some((item) => item.id === id)
+      ) {
+        setNotice("この時点より後の出来事です。現在に戻ると表示できます。");
+        return;
+      }
       setEntryId(id);
       setProjectId(e.projectId);
       setSearch("");
@@ -490,16 +509,19 @@ export default function App() {
     }
   }
   function selectProject(id: string) {
+    setTimeSelection({ eraId: "" });
     setProjectId(id);
     navigate("dashboard");
     setProjectMenu(false);
   }
   function makeProject() {
+    setTimeSelection({ eraId: "" });
     setProjectDraft(newProject());
     setProjectNew(true);
     setProjectMenu(false);
   }
   function quickEntry(kind: Kind) {
+    setTimeSelection({ eraId: "" });
     if (!data?.projects.length) {
       setNotice("先にプロジェクトを作成してください。");
       makeProject();
@@ -510,6 +532,7 @@ export default function App() {
     setQuick(false);
   }
   function createSyndrome(character?: Entry) {
+    setTimeSelection({ eraId: "" });
     const id = character?.projectId || projectId || data?.projects[0]?.id;
     if (!id) {
       setNotice("先にプロジェクトを作成してください。");
@@ -562,16 +585,29 @@ export default function App() {
         <p>物語の庭をひらいています…</p>
       </div>
     );
+  if (publicPreview)
+    return (
+      <PublicReader
+        document={publicDocument(data, publicPreview)}
+        onExit={() => setPublicPreview("")}
+      />
+    );
   const project =
     data.projects.find((p) => p.id === projectId) || data.projects[0];
   const currentId = project?.id || "";
-  const projectEntries = data.entries.filter((e) => e.projectId === currentId);
-  const selected = data.entries.find((e) => e.id === entryId);
+  const readingData = dataAtTime(data, timeSelection);
+  const historical =
+    Boolean(timeSelection.eraId) || timeSelection.year !== undefined;
+  const projectEntries = readingData.entries.filter(
+    (e) => e.projectId === currentId,
+  );
+  const selected = readingData.entries.find((e) => e.id === entryId);
   const currentNav = nav.find((n) => n.id === view);
   const recent = [...projectEntries]
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 4);
-  const allSearch = searchEntries(data.entries, search);
+  const studioSearch = searchStudio(data, search);
+  const allSearch = searchEntries(readingData.entries, search);
   const searchProjects = data.projects.filter((p) =>
     [p.name, p.description, p.tags.join(" "), p.lore, p.truth]
       .join(" ")
@@ -625,10 +661,12 @@ export default function App() {
       },
     });
   function editProject(p: Project) {
+    setTimeSelection({ eraId: "" });
     setProjectDraft({ ...p });
     setProjectNew(false);
   }
   function duplicateEntry(source: Entry) {
+    setTimeSelection({ eraId: "" });
     const copy: Entry = {
       ...structuredClone(source),
       id: crypto.randomUUID(),
@@ -745,7 +783,9 @@ export default function App() {
             <button
               className={view === n.id && !search ? "active" : ""}
               key={n.id}
-              onClick={() => navigate(n.id)}
+              onClick={() =>
+                n.id === "studio" ? showStudio("history") : navigate(n.id)
+              }
             >
               <n.icon size={18} strokeWidth={1.6} />
               <span>{n.label}</span>
@@ -919,6 +959,15 @@ export default function App() {
             onOpen={() => navigate("settings")}
             onReplace={(incoming) => change(() => incoming, "", false)}
           />
+          {project && !["settings", "projects"].includes(view) && (
+            <TimeSwitcher
+              data={data}
+              projectId={currentId}
+              value={timeSelection}
+              onChange={setTimeSelection}
+              onManage={() => showStudio("eras")}
+            />
+          )}
           {search.trim() ? (
             <>
               <div className="page-title">
@@ -930,7 +979,10 @@ export default function App() {
                   </p>
                 </div>
                 <span className="count">
-                  {allSearch.length + searchProjects.length} 件
+                  {allSearch.length +
+                    searchProjects.length +
+                    studioSearch.length}{" "}
+                  件
                 </span>
               </div>
               {searchProjects.length > 0 && (
@@ -966,34 +1018,133 @@ export default function App() {
                   />
                 ))}
               </div>
-              {!allSearch.length && !searchProjects.length && (
-                <div className="empty-state">
-                  <Search size={35} />
-                  <h2>見つかりませんでした</h2>
-                  <p>別のキーワードや #タグ をお試しください。</p>
-                </div>
+              {studioSearch.length > 0 && (
+                <section className="section">
+                  <h2>創作スタジオ</h2>
+                  <div className="studio-list">
+                    {studioSearch.map((item) => (
+                      <button
+                        key={`${item.tab}:${item.id}`}
+                        className="panel studio-result"
+                        onClick={() => {
+                          setSearch("");
+                          setTimeSelection({ eraId: "" });
+                          if (item.projectId) setProjectId(item.projectId);
+                          showStudio(item.tab, item.id);
+                        }}
+                      >
+                        <span>
+                          <strong>{item.title}</strong>
+                          <small>
+                            {item.detail} ·{" "}
+                            {data.projects.find((p) => p.id === item.projectId)
+                              ?.name || "すべての作品"}
+                          </small>
+                        </span>
+                        <ArrowRight size={17} />
+                      </button>
+                    ))}
+                  </div>
+                </section>
               )}
+              {!allSearch.length &&
+                !searchProjects.length &&
+                !studioSearch.length && (
+                  <div className="empty-state">
+                    <Search size={35} />
+                    <h2>見つかりませんでした</h2>
+                    <p>別のキーワードや #タグ をお試しください。</p>
+                  </div>
+                )}
             </>
+          ) : selected && historical ? (
+            <EraEntryPreview
+              entry={selected}
+              data={readingData}
+              onOpen={open}
+              onBack={() => setEntryId("")}
+              onEdit={() => {
+                setTimeSelection({ eraId: "" });
+              }}
+            />
           ) : selected ? (
             <>
-            <div className="entry-studio-tools"><button className="button subtle" onClick={() => showStudio("history", selected.id)}>変更履歴</button><button className="button subtle" onClick={() => showStudio("impact", selected.id)}>変更の影響を見る</button><button className="button subtle" onClick={() => {change(d => checkpoint(d, "entry", selected));setNotice("現在の版を履歴に保存しました。");}}>版を保存</button></div>
-            <EntryEditor
-              key={selected.id}
-              entry={selected}
-              saveState={saveState}
-              onCreateSyndrome={() => createSyndrome(selected)}
-              data={data}
-              onChange={updateEntry}
-              onBack={() => setEntryId("")}
-              onOpen={open}
-              onDelete={() => removeEntry(selected)}
-              onError={setNotice}
-              onRelation={() => setRelationOpen(true)}
-            />
+              <div className="entry-studio-tools">
+                <button
+                  className="button subtle"
+                  onClick={() => showStudio("history", selected.id)}
+                >
+                  変更履歴
+                </button>
+                <button
+                  className="button subtle"
+                  onClick={() => showStudio("impact", selected.id)}
+                >
+                  変更の影響を見る
+                </button>
+                <button
+                  className="button subtle"
+                  onClick={() => showStudio("knowledge", selected.id)}
+                >
+                  人物の認識
+                </button>
+                <button
+                  className="button subtle"
+                  onClick={() => showStudio("eras", selected.id)}
+                >
+                  時代別の案
+                </button>
+                <button
+                  className="button subtle"
+                  onClick={() => {
+                    change((d) => checkpoint(d, "entry", selected));
+                    setNotice("現在の版を履歴に保存しました。");
+                  }}
+                >
+                  版を保存
+                </button>
+              </div>
+              <EntryEditor
+                key={selected.id}
+                entry={selected}
+                saveState={saveState}
+                onCreateSyndrome={() => createSyndrome(selected)}
+                data={data}
+                onChange={updateEntry}
+                onBack={() => setEntryId("")}
+                onOpen={open}
+                onDelete={() => removeEntry(selected)}
+                onError={setNotice}
+                onRelation={() => setRelationOpen(true)}
+              />
             </>
           ) : (
             <>
-              {view === "studio" && <StudioHub data={data} projectId={currentId} change={change} onOpen={open} notice={setNotice} confirm={setConfirm} focusId={studioFocus} onNavigate={showStudio} tab={studioTab} key={`${studioTab}:${studioFocus}`} />}
+              {view === "studio" && (
+                <Suspense
+                  fallback={
+                    <div className="studio-empty" role="status">
+                      スタジオを開いています…
+                    </div>
+                  }
+                >
+                  <StudioHub
+                    data={data}
+                    projectId={currentId}
+                    change={change}
+                    onOpen={open}
+                    notice={setNotice}
+                    confirm={setConfirm}
+                    focusId={studioFocus}
+                    onNavigate={showStudio}
+                    tab={studioTab}
+                    selection={timeSelection}
+                    onTimeChange={setTimeSelection}
+                    onPublicPreview={setPublicPreview}
+                    key={`${studioTab}:${studioFocus}`}
+                  />
+                </Suspense>
+              )}
               {view === "dashboard" && (
                 <>
                   <div className="page-title dashboard-title">
@@ -1335,7 +1486,8 @@ export default function App() {
                   </div>
                   {view === "family" ? (
                     <FamilyGraph
-                      data={data}
+                      data={readingData}
+                      readOnly={historical}
                       projectId={currentId}
                       onOpen={open}
                       onMove={(id, x, y) =>
@@ -1346,6 +1498,21 @@ export default function App() {
                           }),
                           "graph-drag",
                         )
+                      }
+                      onAutoLayout={() =>
+                        setConfirm({
+                          title: "血縁から自動配置しますか？",
+                          message:
+                            "この作品の手動位置を置き換えます。人物の内容や関係は変更しません。取り消しもできます。",
+                          action: () =>
+                            change((d) => ({
+                              ...d,
+                              positions: {
+                                ...d.positions,
+                                ...familyLayout(d, currentId),
+                              },
+                            })),
+                        })
                       }
                       onReset={() =>
                         setConfirm({
@@ -1852,7 +2019,9 @@ export default function App() {
           <button
             key={n.id}
             className={view === n.id ? "active" : ""}
-            onClick={() => navigate(n.id)}
+            onClick={() =>
+              n.id === "studio" ? showStudio("history") : navigate(n.id)
+            }
           >
             <n.icon size={20} />
             <span>

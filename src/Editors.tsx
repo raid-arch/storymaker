@@ -458,6 +458,28 @@ export function EntryEditor({
                   </label>
                 </div>
                 <div className="form-row wrap">
+                  <label>
+                    生年（共通年表）
+                    <input
+                      aria-label="生年（共通年表）"
+                      type="number"
+                      step="any"
+                      placeholder="未確定"
+                      value={entry.fields.生年 || ""}
+                      onChange={(event) => field("生年", event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    没年（共通年表）
+                    <input
+                      aria-label="没年（共通年表）"
+                      type="number"
+                      step="any"
+                      placeholder="未確定"
+                      value={entry.fields.没年 || ""}
+                      onChange={(event) => field("没年", event.target.value)}
+                    />
+                  </label>
                   {charFields.map((key) => (
                     <label key={key}>
                       {key}
