@@ -1,5 +1,7 @@
 import { validAppearance } from "./appearance";
 import type { Appearance } from "./appearance";
+import { cleanStudio, validateStudio } from "./studio/model";
+import type { Studio } from "./studio/model";
 export type Status = string;
 export type Kind = "character" | "world" | "event" | "clue";
 export const syndromeCategory = "症候群";
@@ -77,8 +79,11 @@ export interface Relation {
   to: string;
   type: string;
   note: string;
+  validFrom?: number;
+  validTo?: number;
 }
 export interface Data {
+  studio?: Studio;
   appearance?: Appearance;
   version: 1;
   projects: Project[];
@@ -171,7 +176,7 @@ export function emptyData(): Data {
   };
 }
 export function deleteEntry(data: Data, id: string): Data {
-  return {
+  return cleanStudio({
     ...data,
     entries: data.entries
       .filter((e) => e.id !== id)
@@ -180,7 +185,7 @@ export function deleteEntry(data: Data, id: string): Data {
     positions: Object.fromEntries(
       Object.entries(data.positions).filter(([key]) => key !== id),
     ),
-  };
+  }, new Set([id]));
 }
 export function deleteProject(data: Data, id: string): Data {
   const ids = new Set([id]);
@@ -194,7 +199,7 @@ export function deleteProject(data: Data, id: string): Data {
   const removed = new Set(
     data.entries.filter((e) => ids.has(e.projectId)).map((e) => e.id),
   );
-  return {
+  return cleanStudio({
     ...data,
     projects: data.projects.filter((p) => !ids.has(p.id)),
     entries: data.entries
@@ -204,7 +209,7 @@ export function deleteProject(data: Data, id: string): Data {
     positions: Object.fromEntries(
       Object.entries(data.positions).filter(([key]) => !removed.has(key)),
     ),
-  };
+  }, removed, ids);
 }
 export function descendants(data: Data, id: string): Set<string> {
   const ids = new Set([id]);
@@ -397,6 +402,8 @@ export function validateBackup(raw: unknown): Data {
       !ids.has(r.projectId) ||
       !str(r.type) ||
       !r.type.trim() ||
+      (r.validFrom !== undefined && !Number.isFinite(r.validFrom)) ||
+      (r.validTo !== undefined && !Number.isFinite(r.validTo)) ||
       r.from === r.to
     )
       return fail();
@@ -439,7 +446,7 @@ export function validateBackup(raw: unknown): Data {
     )
   )
     return fail();
-  return d;
+  return d.studio === undefined ? d : { ...d, studio: validateStudio(d.studio) };
 }
 export function markdown(data: Data, projectId: string): string {
   const ids = descendants(data, projectId),
