@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(StorymakerPlugin.class);
     super.onCreate(state);
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    getWindow().getDecorView().setBackgroundColor(Color.rgb(17, 26, 23));
+    findViewById(android.R.id.content).setBackgroundColor(Color.rgb(17, 26, 23));
     getWindow().setStatusBarColor(Color.rgb(17, 26, 23));
     getWindow().setNavigationBarColor(Color.rgb(17, 26, 23));
     ViewCompat.setOnApplyWindowInsetsListener(

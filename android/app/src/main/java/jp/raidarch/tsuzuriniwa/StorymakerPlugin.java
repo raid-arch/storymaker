@@ -26,7 +26,7 @@ import org.json.*;
 
 @CapacitorPlugin(name = "Storymaker")
 public class StorymakerPlugin extends Plugin {
-  private final ExecutorService io = Executors.newSingleThreadExecutor();
+  private final ExecutorService io = Executors.newFixedThreadPool(2);
   private static final String RELEASE_PREFIX = "https://raid-arch.github.io/storymaker/downloads/";
   private static final String LATEST =
       "https://raid-arch.github.io/storymaker/android-release.json";

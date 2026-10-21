@@ -4,7 +4,7 @@
 
 ## Androidアプリ（APK）
 
-[Android用APKをダウンロード](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.0.apk)。初回は空の状態で、Web版の作品を自動で取り込みません。アプリ内に画面を同梱し、通常の編集はChromeを開かずオフラインで使えます。新しいAPKはアプリ内で確認・ダウンロードし、Androidの確認操作で更新できます。詳細とビルド・署名手順は [docs/android.md](docs/android.md) を参照してください。
+[Android用APKをダウンロード](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.1.apk)。初回は空の状態で、Web版の作品を自動で取り込みません。アプリ内に画面を同梱し、通常の編集はChromeを開かずオフラインで使えます。新しいAPKはアプリ内で確認・ダウンロードし、Androidの確認操作で更新できます。詳細とビルド・署名手順は [docs/android.md](docs/android.md) を参照してください。
 
 ## 開発
 

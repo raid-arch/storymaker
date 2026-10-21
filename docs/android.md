@@ -4,7 +4,7 @@
 
 ## インストールと初期状態
 
-[最新のAPK](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.0.apk) をダウンロードしてAndroidで開く。初回はダウンロード元からのインストール許可が必要になる場合がある。
+[最新のAPK](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.1.apk) をダウンロードしてAndroidで開く。初回はダウンロード元からのインストール許可が必要になる場合がある。
 
 アプリIDは `jp.raidarch.tsuzuriniwa`。作品・人物等は一切同梱せず、初回は空。Web版/PWAのブラウザ内データはAPKへ自動移行しない。今回のAPKでは移行せず空から使う。端末の自動バックアップから旧作品が復活しないようAndroidの自動バックアップを無効にしている。アプリの更新はデータを維持し、アンインストール・Android設定の「ストレージを消去」はデータを削除する。自分で作った作品はJSONで保管できる。
 
