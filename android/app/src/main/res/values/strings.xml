@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">綴庭</string>
+    <string name="title_activity_main">綴庭</string>
+    <string name="package_name">jp.raidarch.tsuzuriniwa</string>
+    <string name="custom_url_scheme">jp.raidarch.tsuzuriniwa</string>
+</resources>

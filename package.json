@@ -9,26 +9,31 @@
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:android": "VITE_ANDROID_APP=true vite build && cap sync android",
+    "android:apk": "bash scripts/build-android.sh"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/core": "^7.6.9",
+    "idb": "^8.0.3",
     "lucide-react": "^0.468.0",
-    "idb": "^8.0.3"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "typescript": "~5.9.3",
-    "vite": "^7.3.0",
-    "@vitejs/plugin-react": "^5.1.0",
-    "tailwindcss": "^4.1.18",
+    "@capacitor/cli": "^7.6.9",
+    "@playwright/test": "^1.56.0",
     "@tailwindcss/vite": "^4.1.18",
-    "vite-plugin-pwa": "^1.2.0",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "vitest": "^3.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "fake-indexeddb": "^6.2.0",
-    "@playwright/test": "^1.56.0",
-    "@types/node": "^24.0.0"
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.0",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^3.2.0"
   }
 }

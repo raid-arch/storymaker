@@ -1,3 +1,4 @@
+import { saveTextFile } from "./native";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -315,14 +316,11 @@ export default function GitHubSync({
         setProblem("同期前の保護コピーはまだありません。");
         return;
       }
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(copy, null, 2)], { type: "application/json" }),
+      await saveTextFile(
+        JSON.stringify(copy, null, 2),
+        "application/json",
+        "綴庭-同期前の保護コピー.json",
       );
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "綴庭-同期前の保護コピー.json";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
       setProblem("保護コピーを書き出せませんでした。");
     }

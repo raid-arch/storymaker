@@ -1,3 +1,4 @@
+import { isAndroidApp } from "./native";
 import { useEffect, useRef, useState } from "react";
 import { Check, Download, Smartphone, X } from "lucide-react";
 
@@ -74,6 +75,7 @@ export default function InstallApp() {
     }
   }
 
+  if (isAndroidApp) return null;
   return (
     <>
       <section
@@ -85,6 +87,15 @@ export default function InstallApp() {
           <strong>ホーム画面から、物語の庭へ。</strong>
           <p>綴庭をアプリとして追加できます。</p>
         </div>
+        <a
+          className="button primary"
+          href="https://github.com/raid-arch/storymaker/releases/latest/download/tsuzuriniwa.apk"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Download size={16} />
+          Android用APKをダウンロード
+        </a>
         {installed ? (
           <span className="install-complete" role="status">
             <Check size={16} />

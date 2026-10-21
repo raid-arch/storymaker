@@ -2,6 +2,10 @@
 
 長編作品の人物・世界観・家系・歴史・伏線を関連付けて管理する、日本語の個人用Webアプリです。React + TypeScript + Vite + Tailwind CSS で実装しています。基本機能はログイン・バックエンド・有料API・外部フォントなしで使えます。任意の自動同期には、データ専用の非公開GitHubリポジトリと接続キーを使用します。
 
+## Androidアプリ（APK）
+
+[Android用APKをダウンロード](https://github.com/raid-arch/storymaker/releases/latest/download/tsuzuriniwa.apk)。初回は空の状態で、Web版の作品を自動で取り込みません。アプリ内に画面を同梱し、通常の編集はChromeを開かずオフラインで使えます。新しいAPKはアプリ内で確認・ダウンロードし、Androidの確認操作で更新できます。詳細とビルド・署名手順は [docs/android.md](docs/android.md) を参照してください。
+
 ## 開発
 
 Node.js 22.12 以上（この環境では 24.19）と npm を使用します。

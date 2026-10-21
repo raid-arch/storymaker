@@ -1,3 +1,5 @@
+import { AndroidApp, isAndroidApp, saveTextFile } from "./native";
+import AndroidUpdates from "./AndroidUpdates";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Sprout,
@@ -123,14 +125,8 @@ const kindIcons: Record<Kind, LucideIcon> = {
   event: Clock3,
   clue: Sparkles,
 };
-function download(content: string, type: string, name: string) {
-  const url = URL.createObjectURL(new Blob([content], { type }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+const download = saveTextFile;
+
 function Botanical() {
   return (
     <svg
@@ -305,6 +301,10 @@ export default function App() {
     },
   });
   async function checkAppUpdate(manual = false) {
+    if (isAndroidApp) {
+      if (manual) window.dispatchEvent(new Event("android-check-update"));
+      return;
+    }
     if (!navigator.onLine) {
       if (manual)
         setNotice(
@@ -418,6 +418,48 @@ export default function App() {
     window.addEventListener("beforeunload", before);
     return () => window.removeEventListener("beforeunload", before);
   }, [saveState]);
+  useEffect(() => {
+    if (!isAndroidApp) return;
+    const pause = () => {
+      const latest = dataRef.current;
+      if (latest)
+        saveQueue.current = saveQueue.current
+          .catch(() => {})
+          .then(() => persist(latest));
+    };
+    const back = () => {
+      if (document.querySelector('[role="dialog"],dialog[open]')) {
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+        );
+        return;
+      }
+      if (publicPreview) {
+        setPublicPreview("");
+        return;
+      }
+      if (mobileMenu) {
+        setMobileMenu(false);
+        return;
+      }
+      if (entryId) {
+        setEntryId("");
+        return;
+      }
+      if (view !== "dashboard") {
+        navigate("dashboard");
+        return;
+      }
+      pause();
+      void AndroidApp.minimize();
+    };
+    window.addEventListener("native-back", back);
+    window.addEventListener("native-pause", pause);
+    return () => {
+      window.removeEventListener("native-back", back);
+      window.removeEventListener("native-pause", pause);
+    };
+  }, [view, entryId, mobileMenu, publicPreview]);
   useEffect(() => {
     const fn = () => setOnline(navigator.onLine);
     window.addEventListener("online", fn);
@@ -541,19 +583,30 @@ export default function App() {
     }
     setSyndromeFor({ projectId: id, characterId: character?.id });
   }
-  function backup() {
+  async function backup() {
     if (!data) return;
     const stamp = now();
-    download(
-      JSON.stringify({ ...data, lastBackup: stamp }, null, 2),
-      "application/json",
-      `綴庭-backup-${stamp.slice(0, 10)}.json`,
-    );
-    change((d) => ({ ...d, lastBackup: stamp }));
-    setNotice(
-      "全プロジェクトのJSONを書き出しました。安全な場所に保管してください。",
-    );
+    try {
+      const saved = await download(
+        JSON.stringify({ ...data, lastBackup: stamp }, null, 2),
+        "application/json",
+        `綴庭-backup-${stamp.slice(0, 10)}.json`,
+      );
+      if (!saved) {
+        setNotice("バックアップの保存をキャンセルしました。");
+        return;
+      }
+      change((d) => ({ ...d, lastBackup: stamp }));
+      setNotice(
+        "全プロジェクトのJSONを書き出しました。安全な場所に保管してください。",
+      );
+    } catch {
+      setNotice(
+        "バックアップを保存できませんでした。保存先と空き容量を確認してください。",
+      );
+    }
   }
+
   async function readBackup(file: File) {
     try {
       if (file.size > 100 * 1024 * 1024)
@@ -951,6 +1004,9 @@ export default function App() {
           </div>
         )}
         <InstallApp />
+        {isAndroidApp && (
+          <AndroidUpdates saveState={saveState} notice={setNotice} />
+        )}
         <main className="main-content">
           <GitHubSync
             data={data}
@@ -1943,13 +1999,21 @@ export default function App() {
                         <button
                           className="button subtle full"
                           disabled={!project}
-                          onClick={() => {
-                            download(
-                              markdown(data, currentId),
-                              "text/markdown;charset=utf-8",
-                              `${project?.name || "設定集"}.md`,
-                            );
-                            setNotice("Markdownを書き出しました。");
+                          onClick={async () => {
+                            try {
+                              const saved = await download(
+                                markdown(data, currentId),
+                                "text/markdown;charset=utf-8",
+                                `${project?.name || "設定集"}.md`,
+                              );
+                              setNotice(
+                                saved
+                                  ? "Markdownを書き出しました。"
+                                  : "保存をキャンセルしました。",
+                              );
+                            } catch {
+                              setNotice("ファイルを保存できませんでした。");
+                            }
                           }}
                         >
                           <Download size={16} />「{project?.name || "未選択"}
@@ -1962,7 +2026,9 @@ export default function App() {
                           アプリの更新
                         </h2>
                         <p>
-                          新しい機能や修正を確認できます。更新が見つかったら、保存を確認してから画面上部の「更新する」を押してください。
+                          {isAndroidApp
+                            ? "新しいAPKを確認します。更新が見つかったら、保存を確認して画面上部の「APKを更新」を押してください。Androidの確認画面から更新すると作品データを引き継ぎます。"
+                            : "新しい機能や修正を確認できます。更新が見つかったら、保存を確認してから画面上部の「更新する」を押してください。"}
                         </p>
                         <button
                           className="button subtle full"
@@ -2129,12 +2195,21 @@ export default function App() {
                     <button
                       onClick={() =>
                         act(() => {
-                          download(
+                          void download(
                             markdown(data, target.id),
                             "text/markdown",
                             `${target.name || "作品"}.md`,
-                          );
-                          setNotice("作品の設定をMarkdownで書き出しました。");
+                          )
+                            .then((saved) =>
+                              setNotice(
+                                saved
+                                  ? "作品の設定をMarkdownで書き出しました。"
+                                  : "保存をキャンセルしました。",
+                              ),
+                            )
+                            .catch(() =>
+                              setNotice("ファイルを保存できませんでした。"),
+                            );
                         })
                       }
                     >

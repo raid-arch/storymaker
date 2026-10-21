@@ -5,3 +5,8 @@ playwright-report/
 test-results/
 
 *.tsbuildinfo
+
+.android-signing/
+*.jks
+*.keystore
+release-artifacts/

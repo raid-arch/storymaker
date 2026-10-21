@@ -1,3 +1,4 @@
+import { saveTextFile } from "../native";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import type { Data } from "../model";
@@ -195,12 +196,11 @@ export function exportText(
   name: string,
   type = "text/markdown;charset=utf-8",
 ) {
-  const url = URL.createObjectURL(new Blob([text], { type }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  void saveTextFile(text, type, name).catch(() =>
+    window.alert(
+      "ファイルを保存できませんでした。空き容量と保存先を確認してください。",
+    ),
+  );
 }
 export function PairsEditor({
   value,

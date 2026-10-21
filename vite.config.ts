@@ -1,20 +1,25 @@
+import androidVersion from "./android-version.json";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-const base = process.env.VITE_BASE_PATH || "/";
+const native = process.env.VITE_ANDROID_APP === "true";
+const base = native ? "/" : process.env.VITE_BASE_PATH || "/";
 
 export default defineConfig({
   base,
   define: {
     __APP_VERSION__: JSON.stringify(
-      process.env.GITHUB_SHA?.slice(0, 7) || "開発版",
+      native
+        ? `Android ${process.env.ANDROID_VERSION_NAME || androidVersion.versionName}`
+        : process.env.GITHUB_SHA?.slice(0, 7) || "開発版",
     ),
   },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
+      disable: native,
       registerType: "prompt",
       includeAssets: ["icon.svg", "icon-192.png", "icon-512.png"],
       manifest: {
