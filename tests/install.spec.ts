@@ -17,7 +17,10 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("./");
   await expect(
-    page.getByRole("button", { name: "アプリをインストール", exact: true }),
+    page.getByRole("button", {
+      name: "ブラウザ版をホーム画面に追加",
+      exact: true,
+    }),
   ).toBeVisible();
 });
 
@@ -25,9 +28,11 @@ test("install button offers safe browser instructions when no prompt is availabl
   page,
 }) => {
   await page
-    .getByRole("button", { name: "アプリをインストール", exact: true })
+    .getByRole("button", { name: "ブラウザ版をホーム画面に追加", exact: true })
     .click();
-  const dialog = page.getByRole("dialog", { name: "綴庭をアプリとして使う" });
+  const dialog = page.getByRole("dialog", {
+    name: "ブラウザ版をホーム画面に追加",
+  });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("Android・PCのChrome");
   await expect(dialog).toContainText("iPhone・iPadのSafari");
@@ -54,7 +59,7 @@ test("browser install event is prompted once and cancellation keeps the app usab
     window.dispatchEvent(event);
   });
   await page
-    .getByRole("button", { name: "アプリをインストール", exact: true })
+    .getByRole("button", { name: "ブラウザ版をホーム画面に追加", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toContainText(
     "インストールを見送りました",
@@ -62,7 +67,7 @@ test("browser install event is prompted once and cancellation keeps the app usab
   await expect(page.locator("html")).toHaveAttribute("data-prompt-count", "1");
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
   await page
-    .getByRole("button", { name: "アプリをインストール", exact: true })
+    .getByRole("button", { name: "ブラウザ版をホーム画面に追加", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toContainText(
     "以下の手順をお試しください",
@@ -84,7 +89,7 @@ test("prompt failure shows guidance and successful installation updates the bann
     window.dispatchEvent(event);
   });
   await page
-    .getByRole("button", { name: "アプリをインストール", exact: true })
+    .getByRole("button", { name: "ブラウザ版をホーム画面に追加", exact: true })
     .click();
   await expect(page.getByRole("dialog")).toContainText(
     "インストール画面を開けませんでした",
@@ -92,9 +97,12 @@ test("prompt failure shows guidance and successful installation updates the bann
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
   await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
   await expect(page.locator(".install-banner")).toContainText(
-    "アプリで利用できます",
+    "ブラウザ版を追加済み",
   );
   await expect(
-    page.getByRole("button", { name: "アプリをインストール", exact: true }),
+    page.getByRole("button", {
+      name: "ブラウザ版をホーム画面に追加",
+      exact: true,
+    }),
   ).toHaveCount(0);
 });

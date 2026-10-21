@@ -4,6 +4,8 @@
 
 ## インストールと初期状態
 
+[インストール手順のページ](https://raid-arch.github.io/storymaker/downloads/) にChromeで開く操作・APK保存・Chromeのダウンロード一覧から開く手順をまとめている。アプリ内ブラウザで保存できない場合はURLをコピーしてChromeへ貼り付ける。旧PWAのキャッシュが残る端末向けには、別オリジンの [APK直接配布先](https://raw.githubusercontent.com/raid-arch/storymaker/main/public/downloads/tsuzuriniwa-1.0.1.apk) も利用できる。
+
 [最新のAPK](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.1.apk) をダウンロードしてAndroidで開く。初回はダウンロード元からのインストール許可が必要になる場合がある。
 
 アプリIDは `jp.raidarch.tsuzuriniwa`。作品・人物等は一切同梱せず、初回は空。Web版/PWAのブラウザ内データはAPKへ自動移行しない。今回のAPKでは移行せず空から使う。端末の自動バックアップから旧作品が復活しないようAndroidの自動バックアップを無効にしている。アプリの更新はデータを維持し、アンインストール・Android設定の「ストレージを消去」はデータを削除する。自分で作った作品はJSONで保管できる。
@@ -48,3 +50,5 @@ cp release-artifacts/android-release.json public/
 型チェックと既存の保存・バックアップ・オフラインのブラウザテストに加え、Gradleのrelease assemble、Android Lint、`apksigner verify` を行う。APKの同梱ファイルに作品データ・サービスワーカー・署名秘密鍵がないことを確認する。署名済みAPKのSHA-256はReleaseの `SHA256SUMS` と比較できる。
 
 今回の環境での確認結果：TypeScript型チェック、単体テスト63件、PC・Pixel 7相当のブラウザテスト83件、release assemble・Android Lint・APK署名と公開ファイルのSHA-256検証が完了。API 35ソフトウェアエミュレーターへの署名付きAPKの新規インストール・更新インストールも成功した。ただし、KVMを使えないこのエミュレーターではSystem UIのANRとWebViewレンダラーのSIGTRAPが発生し、アプリ画面の確認は完了できていない。実機での起動・ファイル出力・APK更新画面は未確認であり、ビルド成功と区別する。
+
+APK配布の修正：以前のService WorkerがAPKへの画面遷移にもSPAのHTMLを返してしまう問題を、公開環境のChromiumで再現した。`downloads/` をナビゲーションのフォールバック対象から外し、専用ページの保存リンクには `download` 属性を付ける。Android版とブラウザ版の追加ボタンも区別する。PWAに制御された状態で、案内ページ表示・APK保存・直接リンク保存・SHA-256一致をPC/Android相当のテストで検証する。

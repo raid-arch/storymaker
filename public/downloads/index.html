@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#111a17" />
+    <title>綴庭をAndroidにインストール</title>
+    <link rel="icon" href="../icon.svg" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #111a17;
+        color: #edf1e9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      main {
+        max-width: 650px;
+        margin: auto;
+        padding: 32px 20px 64px;
+      }
+      h1 {
+        font-size: clamp(24px, 6vw, 32px);
+        line-height: 1.5;
+        margin: 12px 0 16px;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 0 0 14px;
+      }
+      p,
+      li {
+        line-height: 1.9;
+      }
+      p {
+        margin: 12px 0;
+        color: #bdc8bd;
+      }
+      a {
+        color: #c1d9a4;
+      }
+      section {
+        background: #1b2720;
+        border: 1px solid #39473b;
+        border-radius: 14px;
+        padding: 22px;
+        margin: 20px 0;
+      }
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        color: #c1d9a4;
+      }
+      .brand img {
+        width: 42px;
+        height: 42px;
+      }
+      .step {
+        color: #b6c99d;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+      }
+      .action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        padding: 13px 16px;
+        border: 1px solid #718864;
+        border-radius: 9px;
+        background: #b6c99d;
+        color: #15221c;
+        font: inherit;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        width: 100%;
+        cursor: pointer;
+      }
+      .secondary {
+        background: transparent;
+        color: #dae6cf;
+        margin-top: 12px;
+      }
+      input {
+        width: 100%;
+        font: inherit;
+        font-size: 13px;
+        padding: 12px;
+        border: 1px solid #52624e;
+        border-radius: 8px;
+        background: #111a17;
+        color: #dae6cf;
+        min-height: 46px;
+      }
+      small {
+        color: #a8b6a6;
+        line-height: 1.8;
+      }
+      #status {
+        min-height: 1.8em;
+        color: #d9e8c7;
+      }
+      ol {
+        padding-left: 24px;
+      }
+      li + li {
+        margin-top: 12px;
+      }
+      details {
+        border-top: 1px solid #39473b;
+        margin-top: 18px;
+        padding-top: 18px;
+      }
+      summary {
+        cursor: pointer;
+        line-height: 1.8;
+      }
+      code {
+        overflow-wrap: anywhere;
+        color: #edf1e9;
+      }
+      strong {
+        color: #edf1e9;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">
+        <img src="../icon.svg" alt="" /><span>綴庭 · Androidアプリ</span>
+      </div>
+      <h1>Androidに綴庭を入れる</h1>
+      <p>
+        <strong
+          >ダウンロードの後、保存されたAPKを開いてインストールします。</strong
+        >ボタンを押すだけではインストールは完了しません。
+      </p>
+      <section>
+        <span class="step">STEP 1</span>
+        <h2>このページをChromeで開く</h2>
+        <p>
+          ChatGPT・LINEなどのアプリ内では、APKを保存できない場合があります。その場合はChromeでこのページを開いてください。
+        </p>
+        <a
+          id="chrome"
+          class="action"
+          hidden
+          href="intent://raid-arch.github.io/storymaker/downloads/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=https%3A%2F%2Fraid-arch.github.io%2Fstorymaker%2Fdownloads%2F;end"
+          >Chromeで開く</a
+        >
+        <p>
+          <small
+            >開けない場合は、下のURLをコピーしてChromeのアドレス欄に貼り付けてください。</small
+          >
+        </p>
+        <input
+          id="page-url"
+          aria-label="Chromeに貼り付けるURL"
+          readonly
+          value="https://raid-arch.github.io/storymaker/downloads/"
+        />
+        <button id="copy" class="action secondary" type="button">
+          ページのURLをコピー
+        </button>
+      </section>
+      <section>
+        <span class="step">STEP 2</span>
+        <h2>APKを保存する</h2>
+        <a
+          id="apk"
+          class="action"
+          href="./tsuzuriniwa-1.0.1.apk"
+          download="tsuzuriniwa-1.0.1.apk"
+          >APKをダウンロード</a
+        >
+        <a
+          id="alternate"
+          class="action secondary"
+          href="https://raw.githubusercontent.com/raid-arch/storymaker/main/public/downloads/tsuzuriniwa-1.0.1.apk"
+          >別の配布先からAPKを保存</a
+        >
+        <p><small id="version">Android 1.0.1 · 約3.2MB · Android専用</small></p>
+        <p>
+          保存の確認が出たら、内容を確認して保存してください。押しても何も起きない場合は、上の手順でChromeに切り替えてください。
+        </p>
+      </section>
+      <section>
+        <span class="step">STEP 3</span>
+        <h2>保存したファイルを開く</h2>
+        <ol>
+          <li>Chrome右上の<strong>「︙」→「ダウンロード」</strong>を開く。</li>
+          <li>
+            <code id="filename">tsuzuriniwa-1.0.1.apk</code>をタップする。
+          </li>
+          <li>
+            Androidの画面で<strong>「インストール」→「開く」</strong>を押す。
+          </li>
+        </ol>
+        <p>
+          ファイルが一覧にない場合は、まだ保存されていません。STEP
+          1からChromeで試してください。
+        </p>
+        <details>
+          <summary>
+            「この提供元からのインストールは許可されていません」と出る
+          </summary>
+          <p>
+            その画面の「設定」から、今回ファイルを開いたアプリ（Chromeやファイル管理アプリ）によるインストールを許可し、戻ってもう一度APKを開いてください。
+          </p>
+        </details>
+        <details>
+          <summary>
+            「アプリをインストールできません」など、別の表示が出る
+          </summary>
+          <p>
+            表示されたメッセージを確認してください。ダウンロードできない場合とは対処が異なるため、表示の文言が分かると原因を調べられます。
+          </p>
+        </details>
+      </section>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p>
+        <small
+          >初回は作品・人物・設定のない空の状態です。ブラウザ版の作品は自動で取り込みません。APKはビルド・署名検証済みですが、実機での起動確認は未実施です。</small
+        >
+      </p>
+      <a href="../">ブラウザ版に戻る</a>
+    </main>
+    <script>
+      const canonical = "https://raid-arch.github.io/storymaker/downloads/";
+      const status = document.getElementById("status");
+      if (/Android/i.test(navigator.userAgent))
+        document.getElementById("chrome").hidden = false;
+      document.getElementById("copy").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(canonical);
+          status.textContent =
+            "URLをコピーしました。Chromeのアドレス欄に貼り付けて開いてください。";
+        } catch {
+          const input = document.getElementById("page-url");
+          input.focus();
+          input.select();
+          status.textContent =
+            "URLを選択しました。長押ししてコピーし、Chromeのアドレス欄に貼り付けてください。";
+        }
+        status.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+      document.getElementById("apk").addEventListener("click", () => {
+        status.textContent =
+          "ファイルが保存されたら、Chromeの「︙ → ダウンロード」からAPKを開いてください。";
+      });
+      fetch("../android-release.json", { cache: "no-store" })
+        .then((r) => {
+          if (!r.ok) throw new Error();
+          return r.json();
+        })
+        .then((info) => {
+          const name = new URL(info.apkUrl).pathname.split("/").pop();
+          if (!/^tsuzuriniwa-\d+\.\d+\.\d+\.apk$/.test(name)) return;
+          const link = document.getElementById("apk");
+          link.href = "./" + name;
+          link.download = name;
+          document.getElementById("alternate").href =
+            "https://raw.githubusercontent.com/raid-arch/storymaker/main/public/downloads/" +
+            name;
+          document.getElementById("filename").textContent = name;
+          document.getElementById("version").textContent =
+            "Android " + info.versionName + " · Android専用";
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>

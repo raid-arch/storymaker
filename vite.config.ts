@@ -58,6 +58,7 @@ export default defineConfig({
         clientsClaim: true,
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         navigateFallback: `${base}index.html`,
+        navigateFallbackDenylist: [/\/downloads(?:\/|$)/],
       },
     }),
   ],

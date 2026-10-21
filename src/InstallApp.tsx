@@ -1,4 +1,3 @@
-import androidVersion from "../android-version.json";
 import { isAndroidApp } from "./native";
 import { useEffect, useRef, useState } from "react";
 import { Check, Download, Smartphone, X } from "lucide-react";
@@ -85,22 +84,20 @@ export default function InstallApp() {
       >
         <Smartphone size={22} strokeWidth={1.5} />
         <div>
-          <strong>ホーム画面から、物語の庭へ。</strong>
-          <p>綴庭をアプリとして追加できます。</p>
+          <strong>Android版とブラウザ版を選べます。</strong>
+          <p>APKの保存・インストール手順をご案内します。</p>
         </div>
         <a
           className="button primary"
-          href={`https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-${androidVersion.versionName}.apk`}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={`${import.meta.env.BASE_URL}downloads/`}
         >
           <Download size={16} />
-          Android用APKをダウンロード
+          Android版のインストール
         </a>
         {installed ? (
           <span className="install-complete" role="status">
             <Check size={16} />
-            アプリで利用できます
+            ブラウザ版を追加済み
           </span>
         ) : (
           <button
@@ -109,7 +106,9 @@ export default function InstallApp() {
             disabled={busy}
           >
             <Download size={16} />
-            {busy ? "インストール画面を開いています…" : "アプリをインストール"}
+            {busy
+              ? "インストール画面を開いています…"
+              : "ブラウザ版をホーム画面に追加"}
           </button>
         )}
       </section>
@@ -133,7 +132,7 @@ export default function InstallApp() {
         <div className="modal-heading">
           <div>
             <span className="eyebrow">YOUR WORLD, ALWAYS WITH YOU</span>
-            <h2 id="install-title">綴庭をアプリとして使う</h2>
+            <h2 id="install-title">ブラウザ版をホーム画面に追加</h2>
           </div>
           <button
             className="icon-button"
