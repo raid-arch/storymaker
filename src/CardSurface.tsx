@@ -9,6 +9,7 @@ export default function CardSurface({
   ...props
 }: HTMLAttributes<HTMLElement> & { onActions: () => void }) {
   const callback = useRef(onActions);
+  const surface = useRef<HTMLElement>(null);
   callback.current = onActions;
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -22,6 +23,14 @@ export default function CardSurface({
     setPressing(false);
   };
   useEffect(() => () => releaseGuard.current(), []);
+  useEffect(() => {
+    const element = surface.current;
+    // Android's selection/search UI must not compete with card actions.
+    // Keep this local: text in editors and writing dialogs stays selectable.
+    const preventSelection = (event: Event) => event.preventDefault();
+    element?.addEventListener("selectstart", preventSelection);
+    return () => element?.removeEventListener("selectstart", preventSelection);
+  }, []);
   useEffect(() => {
     if (!pressing) return;
     window.addEventListener("scroll", cancel, true);
@@ -77,6 +86,8 @@ export default function CardSurface({
   return (
     <section
       {...props}
+      ref={surface}
+      data-card-surface
       data-pressing={pressing || undefined}
       onPointerDown={pointerDown}
       onPointerMove={(event) => {

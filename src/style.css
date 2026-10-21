@@ -3950,6 +3950,12 @@ kbd {
 }
 
 /* Card gestures supplement visible, keyboard-accessible controls. */
+[data-card-surface],
+[data-card-surface] * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .entry-card-wrap,
 .project-card {
   position: relative;

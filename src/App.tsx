@@ -262,15 +262,77 @@ export default function App() {
   const fileRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [online, setOnline] = useState(navigator.onLine);
+  const registration = useRef<ServiceWorkerRegistration | undefined>(undefined);
+  const updateCheck = useRef({ busy: false, last: 0 });
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const {
     offlineReady: [offlineReady],
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
+    onRegisteredSW(_url, registered) {
+      registration.current = registered;
+    },
     onRegisterError(error) {
       console.warn("オフライン登録:", error);
     },
   });
+  async function checkAppUpdate(manual = false) {
+    if (!navigator.onLine) {
+      if (manual)
+        setNotice(
+          "オフラインです。インターネットにつないでから更新を確認してください。",
+        );
+      return;
+    }
+    if (
+      updateCheck.current.busy ||
+      (!manual && Date.now() - updateCheck.current.last < 60_000)
+    )
+      return;
+    updateCheck.current = { busy: true, last: Date.now() };
+    setCheckingUpdate(true);
+    try {
+      const registered =
+        registration.current ||
+        (await navigator.serviceWorker?.getRegistration(
+          import.meta.env.BASE_URL,
+        ));
+      if (!registered) {
+        if (manual)
+          setNotice(
+            "更新を確認できませんでした。オンラインでアプリを開き直してください。",
+          );
+        return;
+      }
+      await registered.update();
+      if (manual)
+        setNotice(
+          "更新を確認しました。新しいバージョンがある場合は、画面上部に「更新する」が表示されます。",
+        );
+    } catch {
+      if (manual)
+        setNotice(
+          "更新を確認できませんでした。通信状態を確認して、もう一度お試しください。",
+        );
+    } finally {
+      updateCheck.current.busy = false;
+      setCheckingUpdate(false);
+    }
+  }
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState === "visible") void checkAppUpdate();
+    };
+    window.addEventListener("focus", check);
+    window.addEventListener("online", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, []);
   useEffect(() => {
     let active = true;
     load()
@@ -1675,6 +1737,28 @@ export default function App() {
                           <Download size={16} />「{project?.name || "未選択"}
                           」を書き出す
                         </button>
+                      </section>
+                      <section className="panel settings-panel">
+                        <h2>
+                          <RefreshCw size={20} />
+                          アプリの更新
+                        </h2>
+                        <p>
+                          新しい機能や修正を確認できます。更新が見つかったら、保存を確認してから画面上部の「更新する」を押してください。
+                        </p>
+                        <button
+                          className="button subtle full"
+                          disabled={checkingUpdate}
+                          onClick={() => void checkAppUpdate(true)}
+                        >
+                          <RefreshCw size={17} />
+                          {checkingUpdate
+                            ? "更新を確認中…"
+                            : "アプリの更新を確認"}
+                        </button>
+                        <small className="app-version">
+                          アプリの版：{__APP_VERSION__}
+                        </small>
                       </section>
                       <section className="panel settings-panel">
                         <h2>

@@ -227,16 +227,17 @@ test("real touch hold and release keeps the action sheet open", async ({
   await page.goto("./");
   const hero = page.locator(".hero-open");
   await hero.scrollIntoViewIfNeeded();
-  const box = (await hero.boundingBox())!;
+  const box = (await page.locator(".hero-content h2").boundingBox())!;
   const client = await page.context().newCDPSession(page);
   await client.send("Input.dispatchTouchEvent", {
     type: "touchStart",
     touchPoints: [
-      { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 120) },
+      { x: box.x + Math.min(box.width / 2, 40), y: box.y + box.height / 2 },
     ],
   });
   const sheet = page.getByRole("dialog", { name: "検証用の物語の操作" });
   await expect(sheet).toBeVisible();
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe("");
   // A person may continue holding after the menu has appeared.
   await page.waitForTimeout(1300);
   await client.send("Input.dispatchTouchEvent", {
@@ -244,6 +245,7 @@ test("real touch hold and release keeps the action sheet open", async ({
     touchPoints: [],
   });
   await expect(sheet).toBeVisible();
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe("");
   await sheet.getByRole("button", { name: /編集する/ }).tap();
   await expect(page.getByRole("textbox", { name: /作品名/ })).toBeVisible();
   await client.detach();
@@ -292,4 +294,39 @@ test("large text stays usable on a narrow phone in list and writing views", asyn
     room.getByRole("button", { name: "完了", exact: true }),
   ).toBeVisible();
   await expect(room.locator(".writing-footer")).toBeInViewport();
+});
+
+test("card selection is suppressed without disabling text selection in editors", async ({
+  page,
+}) => {
+  await page.goto("./");
+  const title = page.locator(".hero-content h2");
+  await expect(title).toBeVisible();
+  expect(
+    await title.evaluate((element) => {
+      const event = new Event("selectstart", {
+        bubbles: true,
+        cancelable: true,
+      });
+      return {
+        cancelled: !element.dispatchEvent(event),
+        userSelect: getComputedStyle(element).userSelect,
+      };
+    }),
+  ).toEqual({ cancelled: true, userSelect: "none" });
+  await page.locator(".hero-open").click();
+  const description = page.getByLabel("説明", { exact: true });
+  const selection = await description.evaluate(
+    (element: HTMLTextAreaElement) => {
+      element.select();
+      return {
+        cancelled: !element.dispatchEvent(
+          new Event("selectstart", { bubbles: true, cancelable: true }),
+        ),
+        text: element.value.slice(element.selectionStart, element.selectionEnd),
+      };
+    },
+  );
+  expect(selection.cancelled).toBe(false);
+  expect(selection.text).not.toBe("");
 });

@@ -6,6 +6,11 @@ const base = process.env.VITE_BASE_PATH || "/";
 
 export default defineConfig({
   base,
+  define: {
+    __APP_VERSION__: JSON.stringify(
+      process.env.GITHUB_SHA?.slice(0, 7) || "開発版",
+    ),
+  },
   plugins: [
     react(),
     tailwindcss(),
