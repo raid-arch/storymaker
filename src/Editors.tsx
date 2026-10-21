@@ -17,6 +17,7 @@ import {
   uniqueOptions,
 } from "./model";
 import FreeTextInput from "./FreeTextInput";
+import WritingField from "./WritingField";
 import type { Data, Entry, Project } from "./model";
 export function TagsInput({
   value,
@@ -293,6 +294,7 @@ export function EntryEditor({
   onDelete,
   onError,
   onRelation,
+  saveState,
 }: {
   entry: Entry;
   data: Data;
@@ -302,6 +304,7 @@ export function EntryEditor({
   onDelete: () => void;
   onError: (s: string) => void;
   onRelation: () => void;
+  saveState: string;
 }) {
   const field = (key: string, value: string) =>
     onChange({ ...entry, fields: { ...entry.fields, [key]: value } });
@@ -527,37 +530,29 @@ export function EntryEditor({
             </label>
           </section>
           <section className="panel editor-section">
-            <h2>設定・メモ</h2>
-            <textarea
-              className="long-editor"
-              aria-label="設定・メモ"
+            <WritingField
+              label="設定・メモ"
+              primary
               value={entry.body}
-              onChange={(e) => onChange({ ...entry, body: e.target.value })}
+              onChange={(body) => onChange({ ...entry, body })}
+              saveState={saveState}
               placeholder="この世界について、思いつくままに。"
             />
             <div className="editor-divider" />
-            <label>
-              <span className="dot green" />
-              作中での通説
-              <textarea
-                aria-label="作中での通説"
-                rows={4}
-                value={entry.lore}
-                onChange={(e) => onChange({ ...entry, lore: e.target.value })}
-                placeholder="登場人物や世間が信じていること"
-              />
-            </label>
-            <label>
-              <span className="dot gold" />
-              {entry.kind === "clue" ? "真相" : "実際の真相"}
-              <textarea
-                aria-label={entry.kind === "clue" ? "真相" : "実際の真相"}
-                rows={4}
-                value={entry.truth}
-                onChange={(e) => onChange({ ...entry, truth: e.target.value })}
-                placeholder="作者だけが知る、この設定の裏側"
-              />
-            </label>
+            <WritingField
+              label="作中での通説"
+              value={entry.lore}
+              onChange={(lore) => onChange({ ...entry, lore })}
+              saveState={saveState}
+              placeholder="登場人物や世間が信じていること"
+            />
+            <WritingField
+              label={entry.kind === "clue" ? "真相" : "実際の真相"}
+              value={entry.truth}
+              onChange={(truth) => onChange({ ...entry, truth })}
+              saveState={saveState}
+              placeholder="作者だけが知る、この設定の裏側"
+            />
           </section>
           <section className="panel editor-section">
             <div className="section-heading">

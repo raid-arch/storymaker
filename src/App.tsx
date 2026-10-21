@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import {
   Sprout,
   LayoutDashboard,
@@ -40,6 +39,7 @@ import {
   Palette,
   LayoutGrid,
   List,
+  Copy,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -64,6 +64,8 @@ import type { Data, Entry, Kind, Project } from "./model";
 import { EntryEditor, ProjectForm } from "./Editors";
 import { FamilyGraph, RelationForm } from "./Graph";
 import InstallApp from "./InstallApp";
+import Modal from "./Modal";
+import CardSurface, { CardMenuButton } from "./CardSurface";
 import GitHubSync from "./GitHubSync";
 import AppearanceSettings from "./AppearanceSettings";
 import { defaultAppearance } from "./appearance";
@@ -159,78 +161,6 @@ function Botanical() {
     </svg>
   );
 }
-function Modal({
-  children,
-  onClose,
-  wide = false,
-}: {
-  children: ReactNode;
-  onClose: () => void;
-  wide?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    const prev = document.activeElement as HTMLElement;
-    const bodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    ref.current?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeRef.current();
-      if (e.key === "Tab") {
-        const nodes = Array.from(
-          ref.current?.querySelectorAll<HTMLElement>(
-            'button:not(:disabled),input:not([type=hidden]),select,textarea,[tabindex="0"]',
-          ) || [],
-        ).filter((n) => n.getClientRects().length);
-        if (!nodes.length) return;
-        const first = nodes[0],
-          last = nodes[nodes.length - 1];
-        if (
-          e.shiftKey &&
-          (document.activeElement === first ||
-            document.activeElement === ref.current)
-        ) {
-          e.preventDefault();
-          last.focus();
-        } else if (
-          !e.shiftKey &&
-          (document.activeElement === last ||
-            document.activeElement === ref.current)
-        ) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.removeEventListener("keydown", key);
-      prev?.focus();
-    };
-  }, []);
-  return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        className={`modal ${wide ? "wide" : ""}`}
-        ref={ref}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="編集・確認"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
 function Badge({ status }: { status: string }) {
   return (
     <span className={`status status-${status}`}>
@@ -239,40 +169,54 @@ function Badge({ status }: { status: string }) {
     </span>
   );
 }
-function EntryCard({ entry, onOpen }: { entry: Entry; onOpen: () => void }) {
+function EntryCard({
+  entry,
+  onOpen,
+  onActions,
+}: {
+  entry: Entry;
+  onOpen: () => void;
+  onActions: () => void;
+}) {
   const Icon = kindIcons[entry.kind];
   return (
-    <button className={`entry-card panel kind-${entry.kind}`} onClick={onOpen}>
-      <div className="card-top">
-        <div className="card-symbol">
-          {entry.image ? (
-            <img src={entry.image} alt="" />
-          ) : entry.kind === "character" ? (
-            <span className="initial">{entry.name[0] || "人"}</span>
-          ) : (
-            <Icon size={21} strokeWidth={1.4} />
-          )}
+    <CardSurface className="entry-card-wrap" onActions={onActions}>
+      <button
+        className={`entry-card panel kind-${entry.kind}`}
+        onClick={onOpen}
+      >
+        <div className="card-top">
+          <div className="card-symbol">
+            {entry.image ? (
+              <img src={entry.image} alt="" />
+            ) : entry.kind === "character" ? (
+              <span className="initial">{entry.name[0] || "人"}</span>
+            ) : (
+              <Icon size={21} strokeWidth={1.4} />
+            )}
+          </div>
+          <Badge status={entry.status} />
         </div>
-        <Badge status={entry.status} />
-      </div>
-      <span className="card-eyebrow">
-        {entry.kind === "character"
-          ? entry.fields.一族 || "CHARACTER"
-          : entry.kind === "clue"
-            ? entry.fields.回収状況 || "未回収"
-            : entry.category || kindLabels[entry.kind]}
-      </span>
-      <h3>{entry.name || "名前未設定"}</h3>
-      <p>{entry.subtitle || entry.body || "まだ綴られていない設定"}</p>
-      <div className="card-bottom">
-        <div className="tag-list">
-          {entry.tags.slice(0, 2).map((t) => (
-            <span key={t}>#{t}</span>
-          ))}
+        <span className="card-eyebrow">
+          {entry.kind === "character"
+            ? entry.fields.一族 || "CHARACTER"
+            : entry.kind === "clue"
+              ? entry.fields.回収状況 || "未回収"
+              : entry.category || kindLabels[entry.kind]}
+        </span>
+        <h3>{entry.name || "名前未設定"}</h3>
+        <p>{entry.subtitle || entry.body || "まだ綴られていない設定"}</p>
+        <div className="card-bottom">
+          <div className="tag-list">
+            {entry.tags.slice(0, 2).map((t) => (
+              <span key={t}>#{t}</span>
+            ))}
+          </div>
+          <ArrowUpRight size={16} />
         </div>
-        <ArrowUpRight size={16} />
-      </div>
-    </button>
+      </button>
+      <CardMenuButton name={entry.name || "名前未設定"} onClick={onActions} />
+    </CardSurface>
   );
 }
 export default function App() {
@@ -309,6 +253,11 @@ export default function App() {
       action: () => void;
       label?: string;
     } | null>(null);
+  const [actionTarget, setActionTarget] = useState<{
+    kind: "project" | "entry";
+    id: string;
+  } | null>(null);
+  const [undoNotice, setUndoNotice] = useState(false);
   const [imported, setImported] = useState<Data | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -391,9 +340,9 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(""), 5000);
+    const timer = setTimeout(() => setNotice(""), undoNotice ? 10000 : 5000);
     return () => clearTimeout(timer);
-  }, [notice]);
+  }, [notice, undoNotice]);
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -406,6 +355,7 @@ export default function App() {
   }, []);
   function change(fn: (d: Data) => Data, group = "") {
     if (!data) return;
+    setUndoNotice(false);
     const t = Date.now();
     if (
       !group ||
@@ -420,6 +370,7 @@ export default function App() {
     setData(fn(data));
   }
   function undo() {
+    setUndoNotice(false);
     const prev = history.current.pop();
     if (prev) {
       saveRevision.current += 1;
@@ -554,15 +505,15 @@ export default function App() {
       }),
       entry.id,
     );
-  const deleteSelected = () =>
-    selected &&
+  const removeEntry = (entry: Entry) =>
     setConfirm({
       title: "この設定を削除しますか？",
-      message: `「${selected.name}」と、この設定へのリンク・人物関係も削除されます。操作は取り消せます。`,
+      message: `「${entry.name}」と、この設定へのリンク・人物関係も削除されます。操作は取り消せます。`,
       action: () => {
-        change((d) => deleteEntry(d, selected.id));
-        setEntryId("");
-        setNotice("設定を削除しました。取り消しボタンで戻せます。");
+        change((d) => deleteEntry(d, entry.id));
+        if (entryId === entry.id) setEntryId("");
+        setNotice("設定を削除しました。");
+        setUndoNotice(true);
       },
     });
   const removeProject = (p: Project) =>
@@ -573,8 +524,29 @@ export default function App() {
         change((d) => deleteProject(d, p.id));
         setProjectId("");
         setNotice("プロジェクトを削除しました。");
+        setUndoNotice(true);
       },
     });
+  function editProject(p: Project) {
+    setProjectDraft({ ...p });
+    setProjectNew(false);
+  }
+  function duplicateEntry(source: Entry) {
+    const copy: Entry = {
+      ...structuredClone(source),
+      id: crypto.randomUUID(),
+      name: `${source.name || "名前未設定"}（コピー）`,
+      updatedAt: now(),
+    };
+    change((d) => ({ ...d, entries: [...d.entries, copy] }));
+    setEntryId(copy.id);
+    setProjectId(copy.projectId);
+    setView(copy.kind);
+    setSearch("");
+    window.scrollTo({ top: 0 });
+    setNotice("設定を複製しました。人物関係は引き継ぎません。");
+    setUndoNotice(true);
+  }
   function projectCrumb(p: Project): string {
     const parent = data?.projects.find((x) => x.id === p.parentId);
     return parent ? `${projectCrumb(parent)} / ${p.name}` : p.name;
@@ -887,7 +859,14 @@ export default function App() {
               )}
               <div className="card-grid">
                 {allSearch.map((e) => (
-                  <EntryCard key={e.id} entry={e} onOpen={() => open(e.id)} />
+                  <EntryCard
+                    key={e.id}
+                    entry={e}
+                    onOpen={() => open(e.id)}
+                    onActions={() =>
+                      setActionTarget({ kind: "entry", id: e.id })
+                    }
+                  />
                 ))}
               </div>
               {!allSearch.length && !searchProjects.length && (
@@ -902,11 +881,12 @@ export default function App() {
             <EntryEditor
               key={selected.id}
               entry={selected}
+              saveState={saveState}
               data={data}
               onChange={updateEntry}
               onBack={() => setEntryId("")}
               onOpen={open}
-              onDelete={deleteSelected}
+              onDelete={() => removeEntry(selected)}
               onError={setNotice}
               onRelation={() => setRelationOpen(true)}
             />
@@ -936,10 +916,24 @@ export default function App() {
                   </div>
                   {project ? (
                     <div className="dashboard-content">
-                      <section
+                      <CardSurface
+                        onActions={() =>
+                          setActionTarget({ kind: "project", id: project.id })
+                        }
                         className="project-hero"
                         {...homeSection("hero")}
                       >
+                        <button
+                          className="hero-open"
+                          aria-label={`${project.name}を編集`}
+                          onClick={() => editProject(project)}
+                        />
+                        <CardMenuButton
+                          name={project.name}
+                          onClick={() =>
+                            setActionTarget({ kind: "project", id: project.id })
+                          }
+                        />
                         <div className="hero-content">
                           <span className="hero-kicker">
                             <i />
@@ -979,7 +973,7 @@ export default function App() {
                         <span className="hero-corner">
                           EVERY WORLD BEGINS WITH A SEED.
                         </span>
-                      </section>
+                      </CardSurface>
                       <div className="stats-grid" {...homeSection("stats")}>
                         {(
                           [
@@ -1062,6 +1056,9 @@ export default function App() {
                                 entry={e}
                                 key={e.id}
                                 onOpen={() => open(e.id)}
+                                onActions={() =>
+                                  setActionTarget({ kind: "entry", id: e.id })
+                                }
                               />
                             ))}
                           </div>
@@ -1401,34 +1398,50 @@ export default function App() {
                                 <div className="timeline-line">
                                   <i />
                                 </div>
-                                <button
-                                  className="panel timeline-card"
-                                  onClick={() => open(e.id)}
+                                <CardSurface
+                                  className="timeline-card-wrap"
+                                  onActions={() =>
+                                    setActionTarget({ kind: "entry", id: e.id })
+                                  }
                                 >
-                                  <div>
-                                    <span className="eyebrow">
-                                      EVENT {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                    <Badge status={e.status} />
-                                  </div>
-                                  <h2>{e.name}</h2>
-                                  <p>{e.body}</p>
-                                  <div className="tag-list">
-                                    {e.links.map((id) => {
-                                      const linked = data.entries.find(
-                                        (x) => x.id === id,
-                                      );
-                                      return (
-                                        linked && (
-                                          <span key={id}>
-                                            <Link2 size={11} />
-                                            {linked.name}
-                                          </span>
-                                        )
-                                      );
-                                    })}
-                                  </div>
-                                </button>
+                                  <button
+                                    className="panel timeline-card"
+                                    onClick={() => open(e.id)}
+                                  >
+                                    <div>
+                                      <span className="eyebrow">
+                                        EVENT {String(i + 1).padStart(2, "0")}
+                                      </span>
+                                      <Badge status={e.status} />
+                                    </div>
+                                    <h2>{e.name}</h2>
+                                    <p>{e.body}</p>
+                                    <div className="tag-list">
+                                      {e.links.map((id) => {
+                                        const linked = data.entries.find(
+                                          (x) => x.id === id,
+                                        );
+                                        return (
+                                          linked && (
+                                            <span key={id}>
+                                              <Link2 size={11} />
+                                              {linked.name}
+                                            </span>
+                                          )
+                                        );
+                                      })}
+                                    </div>
+                                  </button>
+                                  <CardMenuButton
+                                    name={e.name}
+                                    onClick={() =>
+                                      setActionTarget({
+                                        kind: "entry",
+                                        id: e.id,
+                                      })
+                                    }
+                                  />
+                                </CardSurface>
                               </div>
                             ))}
                           </div>
@@ -1442,6 +1455,9 @@ export default function App() {
                               key={e.id}
                               entry={e}
                               onOpen={() => open(e.id)}
+                              onActions={() =>
+                                setActionTarget({ kind: "entry", id: e.id })
+                              }
                             />
                           ))}
                         </div>
@@ -1481,7 +1497,19 @@ export default function App() {
                   </div>
                   <div className="project-grid">
                     {data.projects.map((p) => (
-                      <section className="panel project-card" key={p.id}>
+                      <CardSurface
+                        className="panel project-card"
+                        key={p.id}
+                        onActions={() =>
+                          setActionTarget({ kind: "project", id: p.id })
+                        }
+                      >
+                        <CardMenuButton
+                          name={p.name}
+                          onClick={() =>
+                            setActionTarget({ kind: "project", id: p.id })
+                          }
+                        />
                         {p.image ? (
                           <img className="project-cover" src={p.image} alt="" />
                         ) : (
@@ -1536,7 +1564,7 @@ export default function App() {
                             </button>
                           </div>
                         </div>
-                      </section>
+                      </CardSurface>
                     ))}
                   </div>
                   {!data.projects.length && (
@@ -1715,6 +1743,12 @@ export default function App() {
         <div className="toast" role="status">
           <Check size={16} />
           <span>{notice}</span>
+          {undoNotice && (
+            <button className="toast-undo" onClick={undo}>
+              <Undo2 size={15} />
+              元に戻す
+            </button>
+          )}
           <button
             className="icon-button"
             aria-label="通知を閉じる"
@@ -1724,6 +1758,125 @@ export default function App() {
           </button>
         </div>
       )}
+      {actionTarget &&
+        (() => {
+          const target =
+            actionTarget.kind === "project"
+              ? data.projects.find((p) => p.id === actionTarget.id)
+              : data.entries.find((e) => e.id === actionTarget.id);
+          if (!target) return null;
+          const act = (fn: () => void) => {
+            setActionTarget(null);
+            fn();
+          };
+          return (
+            <Modal
+              variant="actions"
+              label={`${target.name}の操作`}
+              onClose={() => setActionTarget(null)}
+            >
+              <div className="sheet-handle" aria-hidden="true" />
+              <div className="modal-heading">
+                <div>
+                  <span className="eyebrow">
+                    {actionTarget.kind === "project"
+                      ? "PROJECT"
+                      : kindLabels[(target as Entry).kind]}
+                  </span>
+                  <h2>{target.name || "名前未設定"}</h2>
+                </div>
+                <button
+                  className="icon-button"
+                  aria-label="閉じる"
+                  onClick={() => setActionTarget(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="action-list">
+                <button
+                  onClick={() =>
+                    act(() =>
+                      actionTarget.kind === "project"
+                        ? editProject(target as Project)
+                        : open(target.id),
+                    )
+                  }
+                >
+                  <Pencil size={20} />
+                  <span>
+                    編集する<small>名前や内容を自由に書き換える</small>
+                  </span>
+                  <ChevronRight size={16} />
+                </button>
+                {actionTarget.kind === "entry" && (
+                  <button
+                    onClick={() => act(() => duplicateEntry(target as Entry))}
+                  >
+                    <Copy size={20} />
+                    <span>
+                      複製する<small>元の設定を残して、新しい設定を作る</small>
+                    </span>
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+                {actionTarget.kind === "project" && (
+                  <>
+                    <button
+                      onClick={() =>
+                        act(() => {
+                          download(
+                            markdown(data, target.id),
+                            "text/markdown",
+                            `${target.name || "作品"}.md`,
+                          );
+                          setNotice("作品の設定をMarkdownで書き出しました。");
+                        })
+                      }
+                    >
+                      <Download size={20} />
+                      <span>
+                        Markdownで書き出す
+                        <small>下位の作品・章の設定も含める</small>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                    <button onClick={() => act(customize)}>
+                      <Palette size={20} />
+                      <span>
+                        ホームをカスタマイズ
+                        <small>色・文字・カードの表示順を整える</small>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </>
+                )}
+                <button
+                  className="action-danger"
+                  onClick={() =>
+                    act(() =>
+                      actionTarget.kind === "project"
+                        ? removeProject(target as Project)
+                        : removeEntry(target as Entry),
+                    )
+                  }
+                >
+                  <Trash2 size={20} />
+                  <span>
+                    削除する<small>削除する前に確認します</small>
+                  </span>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+              <button
+                className="button subtle full sheet-cancel"
+                onClick={() => setActionTarget(null)}
+              >
+                キャンセル
+              </button>
+            </Modal>
+          );
+        })()}
       {quick && (
         <Modal onClose={() => setQuick(false)}>
           <div className="modal-heading">

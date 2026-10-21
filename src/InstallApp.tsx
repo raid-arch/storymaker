@@ -76,7 +76,10 @@ export default function InstallApp() {
 
   return (
     <>
-      <section className="install-banner" aria-label="アプリのインストール">
+      <section
+        className={`install-banner ${installed ? "is-installed" : ""}`}
+        aria-label="アプリのインストール"
+      >
         <Smartphone size={22} strokeWidth={1.5} />
         <div>
           <strong>ホーム画面から、物語の庭へ。</strong>

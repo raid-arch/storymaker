@@ -3948,3 +3948,372 @@ kbd {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Card gestures supplement visible, keyboard-accessible controls. */
+.entry-card-wrap,
+.project-card {
+  position: relative;
+  min-width: 0;
+}
+.entry-card-wrap .entry-card {
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+.entry-card-wrap,
+.project-hero,
+.project-card {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y pinch-zoom;
+}
+.entry-card-wrap img,
+.project-hero img,
+.project-card img {
+  -webkit-user-drag: none;
+}
+.card-menu-button {
+  position: absolute;
+  z-index: 5;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border-radius: 12px;
+  color: var(--muted);
+}
+.entry-card-wrap > .card-menu-button {
+  right: 8px;
+  bottom: 8px;
+}
+.entry-card .card-bottom {
+  min-height: 38px;
+  padding-right: 34px;
+}
+.entry-card .card-bottom > svg {
+  visibility: hidden;
+}
+.project-card > .card-menu-button {
+  top: 8px;
+  right: 8px;
+  background: var(--panel);
+}
+.project-hero > .card-menu-button {
+  top: 12px;
+  right: 12px;
+  color: #c0cead;
+}
+[data-theme="light"] .project-hero > .card-menu-button {
+  color: #46563c;
+}
+.card-menu-button:hover {
+  background: var(--green-dim);
+  color: var(--green);
+}
+.hero-open {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+.project-hero .hero-content {
+  z-index: 3;
+  pointer-events: none;
+}
+.project-hero .hero-link {
+  pointer-events: auto;
+  min-height: 44px;
+}
+.project-hero .hero-kicker {
+  padding-right: 34px;
+}
+.project-hero .hero-image,
+.project-hero .botanical {
+  pointer-events: none;
+}
+.hero-open:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -5px;
+}
+[data-pressing="true"] {
+  animation: card-hold 550ms ease-out forwards;
+}
+@keyframes card-hold {
+  to {
+    box-shadow: inset 0 0 0 2px var(--green);
+  }
+}
+.actions-dialog {
+  width: 440px;
+  padding: 22px;
+}
+.actions-dialog .modal-heading {
+  margin-bottom: 16px;
+}
+.actions-dialog h2 {
+  overflow-wrap: anywhere;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.sheet-handle {
+  display: none;
+}
+.action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.action-list > button {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 68px;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: left;
+  color: var(--text);
+}
+.action-list > button:hover {
+  background: var(--panel-hover);
+}
+.action-list > button > svg {
+  flex-shrink: 0;
+  color: var(--green);
+}
+.action-list > button > svg:last-child {
+  color: var(--faint);
+  margin-left: auto;
+}
+.action-list > button > span {
+  font-size: calc(14px * var(--text-scale, 1));
+}
+.action-list small {
+  display: block;
+  font-size: calc(11px * var(--text-scale, 1));
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.6;
+}
+.action-list > .action-danger {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 8px;
+  border-radius: 0 0 10px 10px;
+}
+.action-list > .action-danger > svg:first-child {
+  color: #c9897e;
+}
+.sheet-cancel {
+  margin-top: 16px;
+  min-height: 46px;
+}
+.toast-undo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 44px;
+  color: var(--green);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.toast > span {
+  min-width: 0;
+}
+.writing-field {
+  margin-top: 18px;
+}
+.writing-field:first-child {
+  margin-top: 0;
+}
+.writing-field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.writing-field-heading > label {
+  margin: 0;
+  font-weight: 500;
+  color: var(--heading);
+}
+.writing-field-heading > button {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.writing-field textarea {
+  line-height: 1.95;
+}
+.writing-count {
+  display: block;
+  text-align: right;
+  font-size: calc(10px * var(--text-scale, 1));
+  color: var(--faint);
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.writing-dialog {
+  width: 900px;
+  height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 30px 16px;
+}
+.writing-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.writing-toolbar h2 {
+  margin-top: 5px;
+  font-size: calc(18px * var(--text-scale, 1));
+}
+.writing-dialog > textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  padding: 24px 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+  line-height: 2;
+  font-size: calc(16px * var(--text-scale, 1));
+  outline: none;
+  box-shadow: none;
+}
+.writing-footer {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: calc(11px * var(--text-scale, 1));
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+:root[data-layout="list"] .entry-card .card-bottom {
+  padding-right: 44px;
+}
+@media (max-width: 720px) {
+  .actions-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .actions-dialog {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    border-radius: 22px 22px 0 0;
+    padding: 10px 18px calc(18px + env(safe-area-inset-bottom));
+    animation: sheet-in 180ms ease-out;
+  }
+  .sheet-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--line);
+    margin: 0 auto 16px;
+  }
+  .actions-dialog .modal-heading {
+    gap: 10px;
+    margin-bottom: 8px;
+    padding: 0 10px;
+  }
+  .actions-dialog .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .action-list > button {
+    min-height: 72px;
+  }
+  .writing-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+  .writing-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    padding: calc(14px + env(safe-area-inset-top)) 20px
+      calc(12px + env(safe-area-inset-bottom));
+  }
+  .writing-toolbar {
+    padding-bottom: 14px;
+  }
+  .writing-dialog > textarea {
+    padding: 18px 0;
+  }
+  .toast:has(.toast-undo) {
+    width: calc(100vw - 24px);
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .toast .icon-button {
+    min-width: 32px;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pressing="true"],
+  .actions-dialog {
+    animation: none;
+  }
+}
+.timeline-card-wrap {
+  position: relative;
+  min-width: 0;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: pan-y pinch-zoom;
+}
+.timeline-card-wrap .timeline-card {
+  width: 100%;
+  height: 100%;
+}
+.timeline-card-wrap > .card-menu-button {
+  right: 8px;
+  bottom: 8px;
+}
+.timeline-card-wrap .tag-list {
+  padding-right: 44px;
+  min-height: 32px;
+}
+
+/* Once installed, keep the workspace for the story itself. */
+.install-banner.is-installed {
+  margin-top: 8px;
+  margin-bottom: -8px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  min-height: 28px;
+}
+.install-banner.is-installed > svg,
+.install-banner.is-installed > div {
+  display: none;
+}
+.install-banner.is-installed .install-complete {
+  margin-left: 0;
+  font-size: calc(10px * var(--text-scale, 1));
+}
+@media (display-mode: standalone) {
+  .install-banner.is-installed {
+    display: none;
+  }
+}
+:root[data-font="serif"] .writing-dialog > textarea {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+}

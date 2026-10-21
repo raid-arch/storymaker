@@ -50,7 +50,7 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   await saved(page);
   await page.reload();
   await nav(page, "キャラクター");
-  await page.getByRole("button", { name: /試験の人物/ }).click();
+  await page.locator(".entry-card").filter({ hasText: "試験の人物" }).click();
   await expect(page.getByLabel("年齢", { exact: true })).toHaveValue("21");
   await expect(page.getByLabel("自由項目1の内容")).toHaveValue("月下香");
   await page
