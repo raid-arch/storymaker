@@ -1,3 +1,4 @@
+import androidVersion from "../android-version.json";
 import { isAndroidApp } from "./native";
 import { useEffect, useRef, useState } from "react";
 import { Check, Download, Smartphone, X } from "lucide-react";
@@ -89,7 +90,7 @@ export default function InstallApp() {
         </div>
         <a
           className="button primary"
-          href="https://github.com/raid-arch/storymaker/releases/latest/download/tsuzuriniwa.apk"
+          href={`https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-${androidVersion.versionName}.apk`}
           target="_blank"
           rel="noopener noreferrer"
         >

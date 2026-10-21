@@ -27,10 +27,9 @@ import org.json.*;
 @CapacitorPlugin(name = "Storymaker")
 public class StorymakerPlugin extends Plugin {
   private final ExecutorService io = Executors.newSingleThreadExecutor();
-  private static final String RELEASE_PREFIX =
-      "https://github.com/raid-arch/storymaker/releases/download/";
+  private static final String RELEASE_PREFIX = "https://raid-arch.github.io/storymaker/downloads/";
   private static final String LATEST =
-      "https://api.github.com/repos/raid-arch/storymaker/releases/latest";
+      "https://raid-arch.github.io/storymaker/android-release.json";
 
   private PackageInfo current() throws Exception {
     return getContext()
@@ -50,6 +49,8 @@ public class StorymakerPlugin extends Plugin {
     c.setReadTimeout(30000);
     c.setRequestProperty("User-Agent", "Tsuzuriniwa-Android");
     c.setInstanceFollowRedirects(true);
+    c.setUseCaches(false);
+    c.setRequestProperty("Cache-Control", "no-cache");
     if (c.getResponseCode() != 200) {
       c.disconnect();
       throw new IOException("更新サーバーに接続できませんでした。");
@@ -75,19 +76,7 @@ public class StorymakerPlugin extends Plugin {
 
   private JSObject latest() throws Exception {
     PackageInfo installed = current();
-    JSONObject release = json(LATEST);
-    String metadata = "";
-    if (!release.optString("tag_name").startsWith("android-v")
-        || release.optBoolean("draft")
-        || release.optBoolean("prerelease")) throw new IOException("公開済みのAPKが見つかりません。");
-    JSONArray assets = release.getJSONArray("assets");
-    for (int i = 0; i < assets.length(); i++) {
-      JSONObject asset = assets.getJSONObject(i);
-      if ("android-release.json".equals(asset.optString("name")))
-        metadata = asset.getString("browser_download_url");
-    }
-    if (metadata.isEmpty()) throw new IOException("APKの更新情報がありません。");
-    JSONObject remote = json(metadata);
+    JSONObject remote = json(LATEST);
     long version = remote.getLong("versionCode");
     String url = remote.getString("apkUrl"), hash = remote.getString("sha256");
     if (version < 1

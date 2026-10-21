@@ -29,7 +29,7 @@ writeFileSync(
     {
       versionName,
       versionCode,
-      apkUrl: `https://github.com/raid-arch/storymaker/releases/download/android-v${versionName}/${name}`,
+      apkUrl: `https://raid-arch.github.io/storymaker/downloads/${name}`,
       sha256,
     },
     null,

@@ -4,7 +4,7 @@
 
 ## インストールと初期状態
 
-[最新のAPK](https://github.com/raid-arch/storymaker/releases/latest/download/tsuzuriniwa.apk) をダウンロードしてAndroidで開く。初回はダウンロード元からのインストール許可が必要になる場合がある。
+[最新のAPK](https://raid-arch.github.io/storymaker/downloads/tsuzuriniwa-1.0.0.apk) をダウンロードしてAndroidで開く。初回はダウンロード元からのインストール許可が必要になる場合がある。
 
 アプリIDは `jp.raidarch.tsuzuriniwa`。作品・人物等は一切同梱せず、初回は空。Web版/PWAのブラウザ内データはAPKへ自動移行しない。今回のAPKでは移行せず空から使う。端末の自動バックアップから旧作品が復活しないようAndroidの自動バックアップを無効にしている。アプリの更新はデータを維持し、アンインストール・Android設定の「ストレージを消去」はデータを削除する。自分で作った作品はJSONで保管できる。
 
@@ -12,9 +12,9 @@
 
 ## 更新
 
-起動・アプリ復帰時に公開済みGitHub Releaseの更新を確認する（自動確認は6時間ごと）。手動は「設定・バックアップ → アプリの更新を確認」。新しい版があれば「APKを更新」でダウンロードし、Androidの更新確認画面を開く。初回だけ「綴庭による不明なアプリのインストール」を許可してアプリへ戻り、再度「APKを更新」を押す。
+起動・アプリ復帰時に綴庭の配布サイトの更新を確認する（自動確認は6時間ごと）。手動は「設定・バックアップ → アプリの更新を確認」。新しい版があれば「APKを更新」でダウンロードし、Androidの更新確認画面を開く。初回だけ「綴庭による不明なアプリのインストール」を許可してアプリへ戻り、再度「APKを更新」を押す。
 
-更新APKのSHA-256、アプリID、増加したversionCode、現在の署名証明書との一致を検証する。Androidの最終確認は省略しない。配信元は当リポジトリのHTTPS Releaseに固定する。これは確認不要のサイレント更新ではない。
+更新APKのSHA-256、アプリID、増加したversionCode、現在の署名証明書との一致を検証する。Androidの最終確認は省略しない。配信元は当リポジトリのHTTPS Pagesサイトに固定する。これは確認不要のサイレント更新ではない。
 
 ## ビルドと署名
 
@@ -32,10 +32,13 @@ npm run android:apk
 
 この開発環境では署名素材をgit管理外の `.android-signing/` に置く。ビルドスクリプトはそこにある `signing.env` を読み込める。同じ署名鍵を必ず継続使用する。鍵を紛失すると既存インストールへ更新できなくなるため、秘密の場所へ控えを保管する。署名鍵・パスワードをAPKやGitHub Releaseへ添付しない。
 
-`android-version.json` のversionNameとversionCodeを更新する。versionCodeは毎回増やす。`release-artifacts/` にバージョン付きAPK、固定名APK、`android-release.json`、`SHA256SUMS` を生成する。APKを含む公開Releaseのタグは `android-v1.0.0` の形式。
+`android-version.json` のversionNameとversionCodeを更新する。versionCodeは毎回増やす。`release-artifacts/` にバージョン付きAPK、固定名APK、`android-release.json`、`SHA256SUMS` を生成する。バージョン付きAPKを `public/downloads/`、更新情報を `public/android-release.json` にコピーしてmainへpushするとPagesから配布できる。APK内へ配布APKを再帰的に同梱しないよう、Androidビルドでは `scripts/prepare-android.mjs` で配布ファイルを除外する。公開Releaseのタグは `android-v1.0.0` の形式。
 
 ```bash
-gh release create android-v1.0.0 release-artifacts/* --title '綴庭 Android 1.0.0' --notes-file /path/to/release-notes.md
+mkdir -p public/downloads
+cp release-artifacts/tsuzuriniwa-1.0.0.apk public/downloads/
+cp release-artifacts/android-release.json public/
+# 検証後、この配布ファイルと更新情報をmainへcommit/pushする
 ```
 
 `.github/workflows/android.yml` は手動でビルドでき、署名設定後にActions variable `ANDROID_CI_ENABLED=true` を設定すると `android-v*` タグでもビルド・Release公開する。初回にリポジトリのActions secretsへ `ANDROID_KEYSTORE_BASE64`（同じPKCS12のBase64）と `ANDROID_KEYSTORE_PASSWORD` を登録する必要がある。開発環境のGitHub連携にはActions secretsへのアクセス権がないため、ここでは登録していない。初回APKは開発環境で正規の秘密鍵により署名して公開する。Web版のPagesビルドは従来のワークフローで継続する。

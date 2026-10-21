@@ -10,7 +10,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "build:android": "VITE_ANDROID_APP=true vite build && cap sync android",
+    "build:android": "VITE_ANDROID_APP=true vite build && node scripts/prepare-android.mjs && cap sync android",
     "android:apk": "bash scripts/build-android.sh"
   },
   "dependencies": {
