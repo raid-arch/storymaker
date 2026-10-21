@@ -280,6 +280,7 @@ const charFields = [
   "外見",
   "性格",
   "能力",
+  "病気",
   "経歴",
   "所属国家",
   "組織",
@@ -456,7 +457,7 @@ export function EntryEditor({
                   {charFields.map((key) => (
                     <label key={key}>
                       {key}
-                      {["外見", "性格", "能力", "経歴"].includes(key) ? (
+                      {["外見", "性格", "能力", "病気", "経歴"].includes(key) ? (
                         <textarea
                           rows={3}
                           value={entry.fields[key] || ""}
