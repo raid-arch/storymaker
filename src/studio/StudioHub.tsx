@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { studioTabs } from "./model";
 import type { StudioTab } from "./model";
 import type { StudioProps } from "./ui";
@@ -12,6 +13,16 @@ import PublicPanel from "./PublicPanel";
 import TemplatesPanel from "./TemplatesPanel";
 import MapsPanel from "./MapsPanel";
 export default function StudioHub(props: StudioProps & { tab: StudioTab }) {
+  const navigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = navigation.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return;
+    const parent = nav.getBoundingClientRect(),
+      button = active.getBoundingClientRect();
+    nav.scrollLeft +=
+      button.left - parent.left - (nav.clientWidth - button.width) / 2;
+  }, [props.tab]);
   const available: StudioTab[] = [
     "history",
     "impact",
@@ -43,7 +54,11 @@ export default function StudioHub(props: StudioProps & { tab: StudioTab }) {
             </button>
           )}
       </div>
-      <nav className="studio-tabs" aria-label="創作スタジオの機能">
+      <nav
+        ref={navigation}
+        className="studio-tabs"
+        aria-label="創作スタジオの機能"
+      >
         {studioTabs
           .filter((tab) => available.includes(tab.id))
           .map((tab) => (

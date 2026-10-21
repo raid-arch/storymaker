@@ -6,6 +6,18 @@ test("map editor saves linked cities, touch dragging and polygon territories", a
   await page.goto("./");
   await expect(page.locator(".project-hero")).toBeVisible();
   await navStudio(page, "世界地図");
+  await expect
+    .poll(() =>
+      page
+        .getByRole("navigation", { name: "創作スタジオの機能" })
+        .evaluate((nav) => {
+          const active = nav.querySelector('[aria-current="page"]')!;
+          const a = active.getBoundingClientRect(),
+            b = nav.getBoundingClientRect();
+          return a.left >= b.left - 1 && a.right <= b.right + 1;
+        }),
+    )
+    .toBe(true);
   await page.getByRole("button", { name: "地図を作成", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog
@@ -98,6 +110,18 @@ test("map editor saves linked cities, touch dragging and polygon territories", a
   await page.reload();
   await expect(page.locator(".project-hero")).toBeVisible();
   await navStudio(page, "世界地図");
+  await expect
+    .poll(() =>
+      page
+        .getByRole("navigation", { name: "創作スタジオの機能" })
+        .evaluate((nav) => {
+          const active = nav.querySelector('[aria-current="page"]')!;
+          const a = active.getBoundingClientRect(),
+            b = nav.getBoundingClientRect();
+          return a.left >= b.left - 1 && a.right <= b.right + 1;
+        }),
+    )
+    .toBe(true);
   await expect(
     canvas.getByRole("button", { name: "領土：検証領土", exact: true }),
   ).toHaveCount(1);
