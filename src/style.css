@@ -4323,3 +4323,101 @@ kbd {
 :root[data-font="serif"] .writing-dialog > textarea {
   font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
 }
+
+/* Shared syndrome records keep grouped illnesses in one editable place. */
+.disease-heading {
+  margin: 22px 0 12px;
+  font-size: calc(13px * var(--text-scale, 1));
+  color: var(--heading);
+}
+.disease-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin: 14px 0 22px;
+}
+.disease-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+.disease-row > label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.disease-row > label > span {
+  display: block;
+  margin-bottom: 6px;
+}
+.disease-row > .icon-button {
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+  margin-bottom: 1px;
+}
+.disease-list > .button {
+  align-self: flex-start;
+  min-height: 44px;
+}
+.character-syndromes .section-heading {
+  flex-wrap: wrap;
+}
+.character-syndromes .section-heading .text-button {
+  min-height: 44px;
+}
+.syndrome-card {
+  margin: 16px 0;
+  padding: 14px 16px;
+  background: var(--input);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.syndrome-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.syndrome-card-heading > .text-button {
+  min-width: 0;
+  min-height: 44px;
+  text-align: left;
+  white-space: normal;
+}
+.syndrome-card-heading strong {
+  overflow-wrap: anywhere;
+}
+.syndrome-card-heading > .icon-button {
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+}
+.syndrome-card ul {
+  list-style: disc;
+  padding-left: 22px;
+  font-size: calc(13px * var(--text-scale, 1));
+  color: var(--text);
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+.syndrome-description {
+  margin-top: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: calc(12px * var(--text-scale, 1));
+  color: var(--muted);
+  line-height: 1.9;
+}
+.syndrome-empty {
+  padding: 16px 0;
+}
+.character-syndromes > .button {
+  min-height: 46px;
+  white-space: normal;
+}
+.character-syndromes .link-picker > div > p {
+  padding: 14px;
+}

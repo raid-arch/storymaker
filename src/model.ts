@@ -2,6 +2,7 @@ import { validAppearance } from "./appearance";
 import type { Appearance } from "./appearance";
 export type Status = string;
 export type Kind = "character" | "world" | "event" | "clue";
+export const syndromeCategory = "症候群";
 export const statuses: Status[] = ["確定", "仮設定", "検討中", "没案"];
 export const categories = [
   "国家・地域",
@@ -12,6 +13,7 @@ export const categories = [
   "歴史・事件",
   "文化・風習",
   "アイテム・遺物",
+  syndromeCategory,
 ];
 export const kindLabels: Record<Kind, string> = {
   character: "キャラクター",
@@ -49,6 +51,15 @@ export interface Entry {
   links: string[];
   custom: { name: string; value: string }[];
   updatedAt: string;
+}
+export function isSyndrome(entry: Entry): boolean {
+  return entry.kind === "world" && entry.category.trim() === syndromeCategory;
+}
+export function syndromeDiseases(entry: Entry): string[] {
+  return (entry.fields.構成する病気 || "")
+    .split("\n")
+    .map((value) => value.trim())
+    .filter(Boolean);
 }
 export const relationTypes = [
   "親子",
@@ -91,6 +102,7 @@ export function statusOptions(data: Data): string[] {
 export function categoryOptions(data: Data): string[] {
   return uniqueOptions([
     ...data.categories,
+    syndromeCategory,
     ...data.entries.filter((e) => e.kind === "world").map((e) => e.category),
   ]);
 }

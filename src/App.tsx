@@ -59,9 +59,11 @@ import {
   categoryOptions,
   fieldOptions,
   validateBackup,
+  syndromeCategory,
 } from "./model";
 import type { Data, Entry, Kind, Project } from "./model";
 import { EntryEditor, ProjectForm } from "./Editors";
+import { SyndromeForm } from "./Syndromes";
 import { FamilyGraph, RelationForm } from "./Graph";
 import InstallApp from "./InstallApp";
 import Modal from "./Modal";
@@ -240,6 +242,10 @@ export default function App() {
   const [newKind, setNewKind] = useState<Kind | null>(null),
     [newName, setNewName] = useState(""),
     [relationOpen, setRelationOpen] = useState(false);
+  const [syndromeFor, setSyndromeFor] = useState<{
+    projectId: string;
+    characterId?: string;
+  } | null>(null);
   const [category, setCategory] = useState("すべて"),
     [statusFilter, setStatusFilter] = useState("すべて"),
     [timelineScope, setTimelineScope] = useState(""),
@@ -482,6 +488,15 @@ export default function App() {
     setNewKind(kind);
     setNewName("");
     setQuick(false);
+  }
+  function createSyndrome(character?: Entry) {
+    const id = character?.projectId || projectId || data?.projects[0]?.id;
+    if (!id) {
+      setNotice("先にプロジェクトを作成してください。");
+      makeProject();
+      return;
+    }
+    setSyndromeFor({ projectId: id, characterId: character?.id });
   }
   function backup() {
     if (!data) return;
@@ -944,6 +959,7 @@ export default function App() {
               key={selected.id}
               entry={selected}
               saveState={saveState}
+              onCreateSyndrome={() => createSyndrome(selected)}
               data={data}
               onChange={updateEntry}
               onBack={() => setEntryId("")}
@@ -1266,20 +1282,31 @@ export default function App() {
                       </p>
                     </div>
                     {view !== "family" && (
-                      <button
-                        className="button primary"
-                        onClick={() => quickEntry(view as Kind)}
-                      >
-                        <Plus size={17} />
-                        {view === "character"
-                          ? "人物"
-                          : view === "world"
-                            ? "設定"
-                            : view === "event"
-                              ? "出来事"
-                              : "伏線"}
-                        を追加
-                      </button>
+                      <div className="page-actions">
+                        {view === "world" && (
+                          <button
+                            className="button subtle"
+                            onClick={() => createSyndrome()}
+                          >
+                            <Plus size={17} />
+                            症候群を追加
+                          </button>
+                        )}
+                        <button
+                          className="button primary"
+                          onClick={() => quickEntry(view as Kind)}
+                        >
+                          <Plus size={17} />
+                          {view === "character"
+                            ? "人物"
+                            : view === "world"
+                              ? "設定"
+                              : view === "event"
+                                ? "出来事"
+                                : "伏線"}
+                          を追加
+                        </button>
+                      </div>
                     )}
                   </div>
                   {view === "family" ? (
@@ -1961,6 +1988,53 @@ export default function App() {
             </Modal>
           );
         })()}
+      {syndromeFor && (
+        <Modal label="症候群を作る" onClose={() => setSyndromeFor(null)}>
+          <SyndromeForm
+            projectId={syndromeFor.projectId}
+            characterName={
+              syndromeFor.characterId
+                ? data.entries.find((e) => e.id === syndromeFor.characterId)
+                    ?.name || "名前未設定"
+                : undefined
+            }
+            onClose={() => setSyndromeFor(null)}
+            onSave={(syndrome) => {
+              const characterId = syndromeFor.characterId;
+              change((d) => ({
+                ...d,
+                categories: [...new Set([...d.categories, syndromeCategory])],
+                entries: [
+                  ...d.entries.map((e) =>
+                    e.id === characterId
+                      ? {
+                          ...e,
+                          links: [...e.links, syndrome.id],
+                          updatedAt: now(),
+                        }
+                      : e,
+                  ),
+                  syndrome,
+                ],
+              }));
+              setSyndromeFor(null);
+              if (!characterId) {
+                setEntryId(syndrome.id);
+                setProjectId(syndrome.projectId);
+                setView("world");
+                setCategory(syndromeCategory);
+                setSearch("");
+                window.scrollTo({ top: 0 });
+              }
+              setNotice(
+                characterId
+                  ? "症候群を作成して人物に紐づけました。"
+                  : "症候群を作成しました。",
+              );
+            }}
+          />
+        </Modal>
+      )}
       {quick && (
         <Modal onClose={() => setQuick(false)}>
           <div className="modal-heading">

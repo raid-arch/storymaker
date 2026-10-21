@@ -15,9 +15,11 @@ import {
   categoryOptions,
   fieldOptions,
   uniqueOptions,
+  isSyndrome,
 } from "./model";
 import FreeTextInput from "./FreeTextInput";
 import WritingField from "./WritingField";
+import { CharacterSyndromes, DiseaseList } from "./Syndromes";
 import type { Data, Entry, Project } from "./model";
 export function TagsInput({
   value,
@@ -296,6 +298,7 @@ export function EntryEditor({
   onError,
   onRelation,
   saveState,
+  onCreateSyndrome,
 }: {
   entry: Entry;
   data: Data;
@@ -306,6 +309,7 @@ export function EntryEditor({
   onError: (s: string) => void;
   onRelation: () => void;
   saveState: string;
+  onCreateSyndrome: () => void;
 }) {
   const field = (key: string, value: string) =>
     onChange({ ...entry, fields: { ...entry.fields, [key]: value } });
@@ -457,14 +461,18 @@ export function EntryEditor({
                   {charFields.map((key) => (
                     <label key={key}>
                       {key}
-                      {["外見", "性格", "能力", "病気", "経歴"].includes(key) ? (
+                      {["外見", "性格", "能力", "病気", "経歴"].includes(
+                        key,
+                      ) ? (
                         <textarea
+                          aria-label={key}
                           rows={3}
                           value={entry.fields[key] || ""}
                           onChange={(e) => field(key, e.target.value)}
                         />
                       ) : (
                         <input
+                          aria-label={key}
                           value={entry.fields[key] || ""}
                           onChange={(e) => field(key, e.target.value)}
                         />
@@ -530,6 +538,27 @@ export function EntryEditor({
               />
             </label>
           </section>
+          {entry.kind === "character" && (
+            <CharacterSyndromes
+              entry={entry}
+              data={data}
+              onChange={onChange}
+              onOpen={onOpen}
+              onCreate={onCreateSyndrome}
+            />
+          )}
+          {isSyndrome(entry) && (
+            <section className="panel editor-section">
+              <h2>構成する病気</h2>
+              <p className="muted small">
+                病名を自由に追加できます。変更は、この症候群を紐づけたすべての人物に反映されます。
+              </p>
+              <DiseaseList
+                value={entry.fields.構成する病気 || ""}
+                onChange={(value) => field("構成する病気", value)}
+              />
+            </section>
+          )}
           <section className="panel editor-section">
             <WritingField
               label="設定・メモ"
