@@ -40,6 +40,7 @@ import {
   LayoutGrid,
   List,
   Copy,
+  PanelsTopLeft,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
@@ -72,6 +73,9 @@ import GitHubSync from "./GitHubSync";
 import AppearanceSettings from "./AppearanceSettings";
 import { defaultAppearance } from "./appearance";
 import type { DashboardSection } from "./appearance";
+import StudioHub from "./studio/StudioHub";
+import { checkpoint, rememberChanges } from "./studio/model";
+import type { StudioTab } from "./studio/model";
 type View =
   | "dashboard"
   | "character"
@@ -80,7 +84,8 @@ type View =
   | "event"
   | "clue"
   | "projects"
-  | "settings";
+  | "settings"
+  | "studio";
 const nav: { id: View; label: string; icon: LucideIcon; en: string }[] = [
   {
     id: "dashboard",
@@ -103,6 +108,7 @@ const nav: { id: View; label: string; icon: LucideIcon; en: string }[] = [
   },
   { id: "event", label: "年表", icon: Clock3, en: "TIMELINE" },
   { id: "clue", label: "伏線・謎", icon: Sparkles, en: "UNTOLD STORIES" },
+  { id: "studio", label: "創作スタジオ", icon: PanelsTopLeft, en: "STUDIO" },
 ];
 const kindIcons: Record<Kind, LucideIcon> = {
   character: Users,
@@ -224,6 +230,10 @@ function EntryCard({
 export default function App() {
   const [data, setData] = useState<Data | null>(null),
     [loadError, setLoadError] = useState("");
+  const dataRef = useRef<Data | null>(null);
+  dataRef.current = data;
+  const [studioTab, setStudioTab] = useState<StudioTab>("history");
+  const [studioFocus, setStudioFocus] = useState("");
   const [saveState, setSaveState] = useState("保存済み");
   const [saveError, setSaveError] = useState("");
   const saveQueue = useRef(Promise.resolve());
@@ -421,8 +431,11 @@ export default function App() {
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, []);
-  function change(fn: (d: Data) => Data, group = "") {
-    if (!data) return;
+  function change(fn: (d: Data) => Data, group = "", record = true) {
+    const current = dataRef.current;
+    if (!current) return;
+    const requested = fn(current);
+    const next = record ? rememberChanges(current, requested) : requested;
     setUndoNotice(false);
     const t = Date.now();
     if (
@@ -430,12 +443,13 @@ export default function App() {
       lastHistory.current.id !== group ||
       t - lastHistory.current.at > 1500
     ) {
-      history.current = [...history.current.slice(-29), data];
+      history.current = [...history.current.slice(-29), current];
     }
     lastHistory.current = { id: group, at: t };
     saveRevision.current += 1;
     setSaveState("保存中…");
-    setData(fn(data));
+    dataRef.current = next;
+    setData(next);
   }
   function undo() {
     setUndoNotice(false);
@@ -443,6 +457,7 @@ export default function App() {
     if (prev) {
       saveRevision.current += 1;
       setSaveState("保存中…");
+      dataRef.current = prev;
       setData(prev);
       lastHistory.current = { id: "", at: 0 };
       setNotice("直前の操作を取り消しました");
@@ -458,6 +473,11 @@ export default function App() {
     setTimelineScope("");
     setClueFilter("すべて");
     window.scrollTo({ top: 0 });
+  }
+  function showStudio(tab: StudioTab, id = "") {
+    navigate("studio");
+    setStudioTab(tab);
+    setStudioFocus(id);
   }
   function open(id: string) {
     const e = data?.entries.find((x) => x.id === id);
@@ -897,7 +917,7 @@ export default function App() {
             saveState={saveState}
             expanded={view === "settings" && !search && !selected}
             onOpen={() => navigate("settings")}
-            onReplace={(incoming) => change(() => incoming)}
+            onReplace={(incoming) => change(() => incoming, "", false)}
           />
           {search.trim() ? (
             <>
@@ -955,6 +975,8 @@ export default function App() {
               )}
             </>
           ) : selected ? (
+            <>
+            <div className="entry-studio-tools"><button className="button subtle" onClick={() => showStudio("history", selected.id)}>変更履歴</button><button className="button subtle" onClick={() => showStudio("impact", selected.id)}>変更の影響を見る</button><button className="button subtle" onClick={() => {change(d => checkpoint(d, "entry", selected));setNotice("現在の版を履歴に保存しました。");}}>版を保存</button></div>
             <EntryEditor
               key={selected.id}
               entry={selected}
@@ -968,8 +990,10 @@ export default function App() {
               onError={setNotice}
               onRelation={() => setRelationOpen(true)}
             />
+            </>
           ) : (
             <>
+              {view === "studio" && <StudioHub data={data} projectId={currentId} change={change} onOpen={open} notice={setNotice} confirm={setConfirm} focusId={studioFocus} onNavigate={showStudio} tab={studioTab} key={`${studioTab}:${studioFocus}`} />}
               {view === "dashboard" && (
                 <>
                   <div className="page-title dashboard-title">
@@ -2284,7 +2308,7 @@ export default function App() {
             <button
               className="button danger-fill"
               onClick={() => {
-                change(() => imported);
+                change(() => imported, "", false);
                 setProjectId(imported.projects[0]?.id || "");
                 navigate("dashboard");
                 setImported(null);

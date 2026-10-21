@@ -1,0 +1,9 @@
+import { studioTabs } from "./model";
+import type { StudioTab } from "./model";
+import type { StudioProps } from "./ui";
+import HistoryPanel from "./HistoryPanel";
+import ImpactPanel from "./ImpactPanel";
+export default function StudioHub(props:StudioProps & {tab:StudioTab}) {
+  const available:StudioTab[]=["history","impact"];
+  return <div className="studio-hub"><div className="page-title"><div><span className="eyebrow">CREATIVE STUDIO</span><h1>創作スタジオ</h1><p>作品の規模やジャンルに合わせて、設定と物語を組み立てる。</p></div>{props.focusId&&props.data.entries.some(e=>e.id===props.focusId)&&<button className="button subtle" onClick={()=>props.onOpen(props.focusId!)}>設定へ戻る</button>}</div><nav className="studio-tabs" aria-label="創作スタジオの機能">{studioTabs.filter(tab=>available.includes(tab.id)).map(tab=><button key={tab.id} aria-current={props.tab===tab.id?"page":undefined} onClick={()=>props.onNavigate(tab.id,props.focusId)}>{tab.name}</button>)}</nav>{props.tab==="impact"?<ImpactPanel {...props}/>:<HistoryPanel {...props}/>}</div>;
+}

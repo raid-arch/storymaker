@@ -4421,3 +4421,52 @@ kbd {
 .character-syndromes .link-picker > div > p {
   padding: 14px;
 }
+
+/* Creative studio: shared controls adapt to narrow touch screens. */
+.entry-studio-tools { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.entry-studio-tools .button { min-height:44px; }
+.studio-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 24px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+.studio-tabs button { border:1px solid var(--line); border-radius:9px; padding:10px 14px; min-height:44px; color:var(--muted); font-size:calc(12px * var(--text-scale,1)); }
+.studio-tabs button[aria-current="page"] { background:var(--green-dim); color:var(--green); border-color:var(--green); }
+.studio-section { display:flex; flex-direction:column; gap:18px; min-width:0; }
+.studio-section > h2 { font-size:calc(22px * var(--text-scale,1)); color:var(--heading); }
+.studio-section > p { line-height:1.9; }
+.studio-form { padding:24px; min-width:0; }
+.studio-form > h3 { margin-bottom:12px; }
+.studio-split { display:grid; grid-template-columns:minmax(210px, .65fr) minmax(0,1.4fr); gap:20px; align-items:start; }
+.studio-record-list { display:flex; flex-direction:column; gap:10px; max-height:75vh; overflow:auto; padding:2px; }
+.studio-record-list > button { padding:15px; display:flex; flex-direction:column; gap:7px; text-align:left; min-height:72px; overflow-wrap:anywhere; }
+.studio-record-list > .selected { border-color:var(--green); background:var(--green-dim); }
+.studio-record-list span, .studio-record-list small { color:var(--muted); font-size:calc(11px * var(--text-scale,1)); }
+.studio-preview { white-space:normal; overflow-wrap:anywhere; font-size:calc(13px * var(--text-scale,1)); line-height:1.9; padding:16px 0; }
+.studio-preview pre, .studio-diff pre, .studio-public-preview { white-space:pre-wrap; overflow-wrap:anywhere; font-family:inherit; }
+.studio-preview details { padding:14px 0; }
+.studio-preview summary { cursor:pointer; min-height:44px; color:var(--green); }
+.studio-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.studio-actions > button { min-height:44px; }
+.studio-list { display:flex; flex-direction:column; gap:10px; }
+.studio-result { display:flex; align-items:center; gap:14px; min-height:76px; text-align:left; padding:16px 18px; }
+.studio-result > span:last-child { min-width:0; }
+.studio-result strong { display:block; overflow-wrap:anywhere; }
+.studio-result small { display:block; color:var(--muted); margin-top:6px; font-size:calc(11px * var(--text-scale,1)); overflow-wrap:anywhere; }
+.studio-step { padding:4px 8px; border-radius:5px; background:var(--green-dim); color:var(--green); flex-shrink:0; font-size:calc(10px * var(--text-scale,1)); }
+.studio-empty { padding:28px; text-align:center; color:var(--muted); line-height:1.9; }
+.studio-links { margin:16px 0; }
+.studio-chips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.studio-chips > button { display:flex; align-items:center; gap:8px; min-height:36px; padding:6px 9px; border:1px solid var(--line); border-radius:6px; color:var(--green); font-size:calc(11px * var(--text-scale,1)); }
+.studio-links > .text-button { min-height:44px; }
+.studio-diff { padding:15px 0; border-bottom:1px solid var(--line-soft); }
+.studio-diff > div { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.studio-diff section { background:var(--input); border-radius:6px; padding:10px; min-width:0; }
+.studio-diff small { color:var(--muted); }
+.studio-history-image { max-width:100%; max-height:240px; object-fit:contain; }
+@media(max-width:720px) {
+ .studio-tabs { flex-wrap:nowrap; overflow:auto; margin-right:-18px; padding-right:18px; scrollbar-width:thin; }
+ .studio-tabs button { flex-shrink:0; }
+ .studio-split { grid-template-columns:1fr; }
+ .studio-record-list { max-height:240px; }
+ .studio-form { padding:18px; }
+ .studio-actions > .button { flex:1 1 130px; }
+ .entry-studio-tools .button { flex:1 1 110px; font-size:calc(11px * var(--text-scale,1)); }
+ .studio-diff > div { grid-template-columns:1fr; }
+}

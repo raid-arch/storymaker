@@ -125,7 +125,9 @@ export function cleanStudio(data: Data, entryIds: Set<string>, projectIds = new 
 }
 
 function sameContent(a: Entry | Project,b: Entry | Project): boolean {
-  const {updatedAt:_a,...left}=a;const {updatedAt:_b,...right}=b;
+  if(a===b)return true;
+  const {updatedAt:_a,image:ia,...left}=a;const {updatedAt:_b,image:ib,...right}=b;
+  if(ia!==ib)return false;
   return JSON.stringify(left)===JSON.stringify(right);
 }
 export function checkpoint(data: Data, target: "entry"|"project", item: Entry|Project, note="手動で保存した版"): Data {
@@ -153,6 +155,21 @@ export function rememberChanges(before: Data,after: Data): Data {
 export function revisionSnapshot(data: Data, revision: Revision): Entry|Project {
   return {...structuredClone(revision.snapshot),image:imageOf(data,revision.imageId)};
 }
+export function revisionDiff(data:Data,revision:Revision): {label:string;before:string;after:string}[] {
+  const old=revisionSnapshot(data,revision);
+  const current=revision.target==="entry"?data.entries.find(item=>item.id===revision.targetId):data.projects.find(item=>item.id===revision.targetId);
+  const flatten=(item:Entry|Project|undefined):Record<string,string>=>{
+    if(!item)return {};
+    const values:Record<string,string>={"名前":item.name,"状態":item.status,"タグ":item.tags.join("、"),"作中での通説":item.lore,"実際の真相":item.truth};
+    if("kind" in item){Object.assign(values,{"ひとこと":item.subtitle,"カテゴリ":item.category,"設定・メモ":item.body,"所属する作品":data.projects.find(p=>p.id===item.projectId)?.name||"削除済み","関連する設定":item.links.map(id=>data.entries.find(e=>e.id===id)?.name||"削除済み").join("、")});for(const [key,value]of Object.entries(item.fields))values[`項目：${key}`]=value;item.custom.forEach((field,i)=>{values[`自由項目${i+1}の名前`]=field.name;values[`自由項目${i+1}の内容`]=field.value;});}
+    else Object.assign(values,{"説明":item.description,"種類":item.type,"上位プロジェクト":data.projects.find(p=>p.id===item.parentId)?.name||"なし"});
+    return values;
+  };
+  const left=flatten(old),right=flatten(current);
+  const rows=[...new Set([...Object.keys(left),...Object.keys(right)])].filter(key=>(left[key]||"")!==(right[key]||"")).map(key=>({label:key,before:left[key]||"",after:right[key]||""}));
+  if(old.image!==current?.image)rows.push({label:"画像",before:old.image?"保存された画像あり":"画像なし",after:current?.image?"現在の画像あり":"画像なし"});
+  return rows;
+}
 export function restoreRevision(data: Data, revision: Revision): Data {
   let result=data;
   const old=revision.target==="entry"?data.entries.find(item=>item.id===revision.targetId):data.projects.find(item=>item.id===revision.targetId);
@@ -162,7 +179,7 @@ export function restoreRevision(data: Data, revision: Revision): Data {
     const entry=snapshot as Entry;
     if(!data.projects.some(project=>project.id===entry.projectId)) throw new Error("先に所属プロジェクトを復元してください。");
     entry.links=entry.links.filter(id=>data.entries.some(item=>item.id===id));
-    return {...result,entries:putItem(result.entries,entry)};
+    return {...result,entries:putItem(result.entries,entry),relations:result.relations.filter(relation=>(relation.from!==entry.id&&relation.to!==entry.id)||(entry.kind==="character"&&entry.projectId===relation.projectId))};
   }
   const project=snapshot as Project;
   if(!result.projects.some(item=>item.id===project.parentId)) project.parentId="";
