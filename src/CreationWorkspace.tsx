@@ -56,6 +56,8 @@ interface Props {
   onOverview: () => void;
   onStartStory: () => void;
   initialSceneId?: string;
+  initialSection?: string;
+  onSelectionChange?: (id: string) => void;
 }
 const text = (
   event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -89,6 +91,7 @@ function StoryMaker({
   onRelation,
   onOverview,
   initialSceneId,
+  initialSection,
   notice,
 }: Props & { project: Project }) {
   const entries = useMemo(
@@ -105,14 +108,37 @@ function StoryMaker({
     (p) => p.id === initialSceneId,
   );
   const [tab, setTab] = useState(
-      initialPortrayal
-        ? data.entries.find((e) => e.id === initialPortrayal.entryId)?.kind ===
-          "character"
-          ? "cast"
-          : "references"
-        : initialSceneId && scenes.some((item) => item.id === initialSceneId)
-          ? "scenes"
-          : (() => { try { const saved = localStorage.getItem(`tsuzuriniwa:workbench:${projectId}`); return saved && ["planning", "scenes", "cast", "references", "timeline"].includes(saved) ? saved : "planning"; } catch { return "planning"; } })(),
+      initialSection &&
+        ["planning", "scenes", "cast", "references", "timeline"].includes(
+          initialSection,
+        )
+        ? initialSection
+        : initialPortrayal
+          ? data.entries.find((e) => e.id === initialPortrayal.entryId)
+              ?.kind === "character"
+            ? "cast"
+            : "references"
+          : initialSceneId && scenes.some((item) => item.id === initialSceneId)
+            ? "scenes"
+            : (() => {
+                try {
+                  const saved = localStorage.getItem(
+                    `tsuzuriniwa:workbench:${projectId}`,
+                  );
+                  return saved &&
+                    [
+                      "planning",
+                      "scenes",
+                      "cast",
+                      "references",
+                      "timeline",
+                    ].includes(saved)
+                    ? saved
+                    : "planning";
+                } catch {
+                  return "planning";
+                }
+              })(),
     ),
     [sceneId, setSceneId] = useState(() => {
       let saved = "";
@@ -140,7 +166,11 @@ function StoryMaker({
       } catch {}
     }
   }, [projectId, sceneId]);
-  useEffect(() => { try { localStorage.setItem(`tsuzuriniwa:workbench:${projectId}`, tab); } catch {} }, [projectId, tab]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(`tsuzuriniwa:workbench:${projectId}`, tab);
+    } catch {}
+  }, [projectId, tab]);
   const [chronological, setChronological] = useState(false);
   const [personQuery, setPersonQuery] = useState(""),
     [referenceQuery, setReferenceQuery] = useState(""),
@@ -280,7 +310,22 @@ function StoryMaker({
         </span>
         <small>編集内容は自動保存されます。</small>
       </div>
-      {tab === "planning" && <StoryPlanner data={data} project={project} change={change} onWrite={(id) => { setSceneId(id); setColumnId(studioOf(data).scenes.find((s) => s.id === id)?.columnId || ""); setTab("scenes"); }} onCast={() => setTab("cast")} onTimeline={() => setTab("timeline")} />}
+      {tab === "planning" && (
+        <StoryPlanner
+          data={data}
+          project={project}
+          change={change}
+          onWrite={(id) => {
+            setSceneId(id);
+            setColumnId(
+              studioOf(data).scenes.find((s) => s.id === id)?.columnId || "",
+            );
+            setTab("scenes");
+          }}
+          onCast={() => setTab("cast")}
+          onTimeline={() => setTab("timeline")}
+        />
+      )}
       {tab === "scenes" && (
         <div className="creation-layout">
           <aside className="panel creation-outline" aria-label="章とシーン">
@@ -427,7 +472,12 @@ function StoryMaker({
               <section className="panel creation-section">
                 <div className="creation-heading">
                   <h2>シーンを書く</h2>
-                  <button className="button subtle" onClick={() => setTab("planning")}>設計図へ戻る</button>
+                  <button
+                    className="button subtle"
+                    onClick={() => setTab("planning")}
+                  >
+                    設計図へ戻る
+                  </button>
                   <div className="creation-inline-actions">
                     {[-1, 1].map((offset) => {
                       const siblings = scenes
@@ -547,7 +597,21 @@ function StoryMaker({
                     />
                   </label>
                 </div>
-                {(scene.purpose || scene.conflict || scene.outcome || scene.povId) && <div className="scene-writing-guide" aria-label="執筆中のプロット参照"><strong>この場面の設計</strong>{scene.povId && <span>視点：{names(scene.povId)}</span>}{scene.purpose && <p>目的：{scene.purpose}</p>}{scene.conflict && <p>対立：{scene.conflict}</p>}{scene.outcome && <p>変化：{scene.outcome}</p>}</div>}
+                {(scene.purpose ||
+                  scene.conflict ||
+                  scene.outcome ||
+                  scene.povId) && (
+                  <div
+                    className="scene-writing-guide"
+                    aria-label="執筆中のプロット参照"
+                  >
+                    <strong>この場面の設計</strong>
+                    {scene.povId && <span>視点：{names(scene.povId)}</span>}
+                    {scene.purpose && <p>目的：{scene.purpose}</p>}
+                    {scene.conflict && <p>対立：{scene.conflict}</p>}
+                    {scene.outcome && <p>変化：{scene.outcome}</p>}
+                  </div>
+                )}
                 <WritingField
                   label="シーンの本文"
                   value={scene.manuscript || ""}
@@ -957,7 +1021,13 @@ function StoryMaker({
         <div className="creation-layout">
           <aside className="panel creation-index">
             <h2>使える設定資料</h2>
-            <SettingGenrePicker entries={entries.filter((e) => e.kind !== "character")} categories={categoryOptions(data)} value={referenceGenre} onChange={setReferenceGenre} label="参照資料のジャンル" />
+            <SettingGenrePicker
+              entries={entries.filter((e) => e.kind !== "character")}
+              categories={categoryOptions(data)}
+              value={referenceGenre}
+              onChange={setReferenceGenre}
+              label="参照資料のジャンル"
+            />
             <label>
               資料を絞り込む
               <input
@@ -1262,6 +1332,7 @@ function WorldBuilder({
   onEditProject,
   onOverview,
   onStartStory,
+  onSelectionChange,
 }: Props & { project: Project }) {
   const entries = useMemo(
     () => data.entries.filter((e) => e.projectId === projectId),
@@ -1292,6 +1363,9 @@ function WorldBuilder({
       } catch {}
     }
   }, [projectId, selectedId]);
+  useEffect(() => {
+    onSelectionChange?.(selectedId);
+  }, [selectedId, onSelectionChange]);
   const selected = entries.find((e) => e.id === selectedId);
   const update = (entry: Entry) =>
     change(
@@ -1304,6 +1378,8 @@ function WorldBuilder({
       entry.id,
     );
   const presets: [string, Kind, string][] = [
+    ["時間・暦", "world", "時間・暦"],
+    ["世界の法則", "world", "基本設定"],
     ["人物", "character", ""],
     ["国", "world", "国家・地域"],
     ["街", "world", "都市・建築物"],
@@ -1334,14 +1410,31 @@ function WorldBuilder({
       </header>
       <div className="creation-layout">
         <aside className="panel creation-index">
-          <SettingGenrePicker entries={entries} categories={categoryOptions(data)} value={genre} label="世界観の設定ジャンル" onChange={(next) => {
-            setGenre(next);
-            if (next.startsWith("world:")) { setKind("world"); setCategory(next.slice(6)); }
-            else if (next.startsWith("kind:")) { setKind(next.slice(5) as Kind); setCategory(""); }
-          }} onAdd={(name) => {
-            change((d) => ({ ...d, categories: [...new Set([...d.categories, name])] }));
-            setGenre(`world:${name}`); setKind("world"); setCategory(name);
-          }} />
+          <SettingGenrePicker
+            entries={entries}
+            categories={categoryOptions(data)}
+            value={genre}
+            label="世界観の設定ジャンル"
+            onChange={(next) => {
+              setGenre(next);
+              if (next.startsWith("world:")) {
+                setKind("world");
+                setCategory(next.slice(6));
+              } else if (next.startsWith("kind:")) {
+                setKind(next.slice(5) as Kind);
+                setCategory("");
+              }
+            }}
+            onAdd={(name) => {
+              change((d) => ({
+                ...d,
+                categories: [...new Set([...d.categories, name])],
+              }));
+              setGenre(`world:${name}`);
+              setKind("world");
+              setCategory(name);
+            }}
+          />
           <form
             className="creation-new-setting"
             onSubmit={(e) => {
@@ -1354,7 +1447,11 @@ function WorldBuilder({
               };
               change((d) => ({ ...d, entries: [...d.entries, entry] }));
               setSelectedId(entry.id);
-              setGenre(entry.kind === "world" ? `world:${entry.category || "未分類"}` : `kind:${entry.kind}`);
+              setGenre(
+                entry.kind === "world"
+                  ? `world:${entry.category || "未分類"}`
+                  : `kind:${entry.kind}`,
+              );
               setQuery("");
               setName("");
             }}
@@ -1423,9 +1520,25 @@ function WorldBuilder({
               onChange={(e) => setQuery(text(e))}
             />
           </label>
-          {!entries.some((e) => matchesSettingGenre(e, genre) && `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())) && <p className="muted">このジャンル・検索条件の設定はまだありません。上の作成欄から追加できます。</p>}
+          {!entries.some(
+            (e) =>
+              matchesSettingGenre(e, genre) &&
+              `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`
+                .toLocaleLowerCase()
+                .includes(query.trim().toLocaleLowerCase()),
+          ) && (
+            <p className="muted">
+              このジャンル・検索条件の設定はまだありません。上の作成欄から追加できます。
+            </p>
+          )}
           {entries
-            .filter((e) => matchesSettingGenre(e, genre) && `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+            .filter(
+              (e) =>
+                matchesSettingGenre(e, genre) &&
+                `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`
+                  .toLocaleLowerCase()
+                  .includes(query.trim().toLocaleLowerCase()),
+            )
             .map((entry) => (
               <button
                 className="creation-scene-link"

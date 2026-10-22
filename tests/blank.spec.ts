@@ -32,7 +32,7 @@ test("fresh visitors see a blank workspace with no story or sample data", async 
   expect(snapshot.entries).toEqual([]);
   expect(snapshot.relations).toEqual([]);
   await page
-    .getByRole("button", { name: "ストーリーを作成", exact: true })
+    .getByRole("button", { name: "親を持たない物語から始める", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("自分だけの作品");
   await page.getByRole("dialog")
@@ -41,7 +41,7 @@ test("fresh visitors see a blank workspace with no story or sample data", async 
   await expect(page.locator(".save-indicator")).toContainText("保存済み");
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "自分だけの作品", exact: true }),
+    page.getByRole("heading", { name: "あなたの物語を、ここから。", exact: true }),
   ).toBeVisible();
   const other = await context
     .browser()!
@@ -62,11 +62,8 @@ test("no sample import control or personalized preview is exposed in a fresh app
 }) => {
   await page.goto("./");
   await expect(page.getByRole("heading", {name:"あなたの物語を、ここから。"})).toBeVisible();
-  if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
-    await page.getByRole("button", { name: "メニューを開く" }).click();
-  await page
-    .getByRole("button", { name: "設定・バックアップ", exact: true })
-    .click();
+  await page.getByRole("button", {name:"開始画面の設定を開く",exact:true}).click();
+  await page.getByRole("button", {name:"見た目",exact:true}).click();
   await expect(
     page.getByRole("button", { name: "別のサンプルとして追加" }),
   ).toHaveCount(0);

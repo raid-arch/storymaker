@@ -79,7 +79,7 @@ test("shared syndromes group illnesses and update all linked people without repl
     .fill("改訂した症候群");
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   for (const name of ["人物A", "人物B"]) {
     await person(page, name);
     await expect(page.locator(".syndrome-card li")).toHaveText([
@@ -167,6 +167,7 @@ test("world archive can create syndromes, remove illnesses, search them, and exp
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
   await page.getByLabel("設定のジャンル", { exact: true }).selectOption("world:症候群");
   await expect(page.locator(".entry-card")).toHaveCount(1);
+  if(await page.getByRole("button",{name:"設定を検索する",exact:true}).isVisible())await page.getByRole("button",{name:"設定を検索する",exact:true}).click();
   await page
     .getByRole("textbox", { name: "すべての設定を検索" })
     .fill("病気丁");
@@ -186,6 +187,7 @@ test("world archive can create syndromes, remove illnesses, search them, and exp
   await page
     .getByRole("button", { name: "設定・バックアップ", exact: true })
     .click();
+  await page.getByRole("button",{name:"データの受け渡し",exact:true}).click();
   const jsonDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "全データをJSONでバックアップ", exact: true })

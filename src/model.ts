@@ -163,16 +163,35 @@ export function sharedProjectIds(data: Data, projectId: string): Set<string> {
     ids.add(id);
     if (project.worldIds !== undefined) project.worldIds.forEach(visit);
     if (project.parentId) visit(project.parentId);
+    // A visual parent now also supplies the common world, without inheriting a sibling story.
+    const parents = new Set<string>([project.id]);
+    let parentId = project.collectionId;
+    while (parentId && !parents.has(parentId)) {
+      parents.add(parentId);
+      const parent = data.projects.find((p) => p.id === parentId);
+      if (!parent) break;
+      if (isWorldLibrary(parent)) {
+        visit(parent.id);
+        break;
+      }
+      parent.worldIds?.forEach(visit);
+      parentId = parent.collectionId;
+    }
   };
   visit(projectId);
   return ids;
 }
 export function referencedWorldIds(data: Data, project: Project): string[] {
-  return project.parentId || project.worldIds === undefined
-    ? [...sharedProjectIds(data, project.id)].filter((id) => id !== project.id)
-    : project.worldIds;
+  return [
+    ...new Set([
+      ...(project.worldIds || []),
+      ...[...sharedProjectIds(data, project.id)].filter(
+        (id) => id !== project.id,
+      ),
+    ]),
+  ];
 }
-/** Idempotent: preserve IDs, settings and old sharing while removing parent/child navigation. */
+/** Idempotent migration: preserve IDs and content while materializing inherited world references. */
 export function organizeStories(data: Data): Data {
   return {
     ...data,
@@ -277,7 +296,8 @@ export function deleteProject(data: Data, id: string): Data {
         .filter((p) => !ids.has(p.id))
         .map((p) => ({
           ...p,
-          collectionId: p.collectionId && ids.has(p.collectionId) ? "" : p.collectionId,
+          collectionId:
+            p.collectionId && ids.has(p.collectionId) ? "" : p.collectionId,
           worldIds: p.worldIds?.filter((source) => !ids.has(source)),
           eventOrder: p.eventOrder?.filter((eventId) => !removed.has(eventId)),
         })),
@@ -445,7 +465,8 @@ export function validateBackup(raw: unknown): Data {
         if (seen.has(parent)) return fail();
         seen.add(parent);
         const target = d.projects.find((item) => item.id === parent);
-        if (!target || (!isWorldLibrary(target) && target.type !== "シリーズ")) return fail();
+        if (!target || (!isWorldLibrary(target) && target.type !== "シリーズ"))
+          return fail();
         parent = target.collectionId || "";
       }
     }
@@ -463,6 +484,7 @@ export function validateBackup(raw: unknown): Data {
         ![
           ...(item.worldIds || []),
           ...(item.parentId ? [item.parentId] : []),
+          ...(item.collectionId ? [item.collectionId] : []),
         ].every(visit)
       )
         return false;

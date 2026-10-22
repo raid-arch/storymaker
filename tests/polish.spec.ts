@@ -2,14 +2,8 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 
 async function characters(page: Page) {
-  const mobile = page.locator(".bottom-nav");
-  if (await mobile.isVisible())
-    await mobile.getByRole("button", { name: "人物", exact: true }).click();
-  else
-    await page
-      .locator(".main-nav")
-      .getByRole("button", { name: /キャラクター/ })
-      .click();
+  const menu=page.getByRole("button",{name:"メニューを開く",exact:true});if(await menu.isVisible())await menu.click();
+  await page.locator(".main-nav").getByRole("button",{name:/キャラクター/}).click();
 }
 async function saved(page: Page) {
   await expect(page.locator(".save-indicator")).toContainText("保存済み");
@@ -155,7 +149,7 @@ test("entry actions duplicate independently and preserve original links; deletio
   await expect(page.locator(".relation-link")).toHaveCount(4);
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await characters(page);
   await expect(page.locator(".entry-card")).toHaveCount(6);
   await page
@@ -205,7 +199,7 @@ test("writing room autosaves, counts text, restores focus, and retains text thro
   );
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await characters(page);
   await page
     .locator(".entry-card")

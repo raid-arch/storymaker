@@ -15,6 +15,7 @@ test("shared setting opens inside its story and sibling settings remain separate
     { ...newEntry("b", "character"), name: "Bだけの人物" },
   ];
   await page.addInitScript((value) => {
+    if(!localStorage.getItem("tsuzuriniwa:launch-mode")){localStorage.setItem("tsuzuriniwa:launch-mode","resume");localStorage.setItem("tsuzuriniwa:active-workspace",value.projects[0].id);localStorage.setItem("tsuzuriniwa:resume-view","dashboard");}localStorage.setItem("tsuzuriniwa:tools-expanded","true");
     const request = indexedDB.open("tsuzuriniwa", 1);
     request.onupgradeneeded = () =>
       request.result.createObjectStore("state").put(value, "main");
@@ -29,8 +30,7 @@ test("shared setting opens inside its story and sibling settings remain separate
     .locator(".project-menu")
     .getByRole("button", { name: "物語A", exact: true })
     .click();
-  const scope = page.getByRole("region", { name: "ストーリーと参照資料" });
-  await expect(scope).toContainText("参照資料の設定：1件");
+  await expect(page.locator(".workspace-scope-strip")).toContainText("共通世界 の設定に準拠");
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
     await page.getByRole("button", { name: "メニューを開く" }).click();
   await page

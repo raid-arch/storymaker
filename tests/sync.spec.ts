@@ -1,12 +1,18 @@
 import { expect, test } from "./fixtures";
 import type { Data } from "../src/model";
 async function settings(page: import("@playwright/test").Page) {
+  await page.locator(".project-gateway, .topbar").first().waitFor({ state: "visible" });
+  if(await page.getByRole("button",{name:"開始画面の設定を開く",exact:true}).isVisible()){
+    await page.getByRole("button",{name:"開始画面の設定を開く",exact:true}).click();
+    await page.getByRole("button",{name:"端末間同期",exact:true}).click();return;
+  }
   await page.locator(".main-nav").waitFor({ state: "attached" });
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
     await page.getByRole("button", { name: "メニューを開く" }).click();
   await page
     .getByRole("button", { name: "設定・バックアップ", exact: true })
     .click();
+  await page.getByRole("button",{name:"端末間同期",exact:true}).click();
 }
 async function saved(page: import("@playwright/test").Page) {
   await expect(page.locator(".save-indicator")).toContainText("保存済み");
@@ -20,12 +26,9 @@ async function connect(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: "接続してデータを確認" }).click();
 }
 async function home(page: import("@playwright/test").Page) {
-  if (await page.locator(".bottom-nav").isVisible())
-    await page
-      .locator(".bottom-nav")
-      .getByRole("button", { name: "ホーム", exact: true })
-      .click();
-  else await page.locator(".brand").click();
+  const menu=page.getByRole("button",{name:"メニューを開く",exact:true});if(await menu.isVisible())await menu.click();
+  const extra=page.locator(".main-nav details");if(!await extra.evaluate((el)=>(el as HTMLDetailsElement).open))await extra.locator("summary").click();
+  await page.locator(".main-nav").getByRole("button",{name:"ダッシュボード",exact:true}).click();
 }
 function cloud() {
   let data: Data | null = null,
@@ -155,6 +158,7 @@ test("public repository is rejected and credentials stay out of JSON exports", a
     "公開リポジトリには同期できません",
   );
   expect(remote.writes).toBe(0);
+  await page.getByRole("button",{name:"データの受け渡し",exact:true}).click();
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "全データをJSONでバックアップ" })

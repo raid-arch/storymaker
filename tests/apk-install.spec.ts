@@ -7,13 +7,13 @@ test("APK instructions remain accessible under PWA control and save a real APK",
 }) => {
   await page.goto("./");
   await expect(
-    page.getByRole("link", { name: "Android版のインストール", exact: true }),
+    page.getByRole("link", { name: "Androidアプリをインストール", exact: true }),
   ).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   await page
-    .getByRole("link", { name: "Android版のインストール", exact: true })
+    .getByRole("link", { name: "Androidアプリをインストール", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Androidに綴庭を入れる", exact: true }),
@@ -97,7 +97,7 @@ test("direct APK links are not replaced with the PWA HTML fallback", async ({
   page,
 }) => {
   await page.goto("./");
-  await expect(page.locator(".install-banner")).toBeVisible();
+  await expect(page.getByRole("link",{name:"Androidアプリをインストール",exact:true})).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));

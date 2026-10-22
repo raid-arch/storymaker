@@ -15,11 +15,11 @@ async function workspace(page: Page) {
     await expect(
       page
         .locator(".bottom-nav")
-        .getByRole("button", { name: "人物", exact: true }),
+        .getByRole("button", { name: "編集", exact: true }),
     ).toHaveCount(1);
     await page
       .locator(".bottom-nav")
-      .getByRole("button", { name: "制作", exact: true })
+      .getByRole("button", { name: "編集", exact: true })
       .click();
     await expect(
       page.getByRole("region", { name: "ストーリー制作画面" }),
@@ -68,6 +68,8 @@ test.beforeEach(async ({ page }) => {
     },
   ];
   await page.addInitScript((value) => {
+    if (!localStorage.getItem("tsuzuriniwa:launch-mode")) { localStorage.setItem("tsuzuriniwa:launch-mode","resume");localStorage.setItem("tsuzuriniwa:active-workspace",value.projects[0].id);localStorage.setItem("tsuzuriniwa:resume-view","creation"); }
+    localStorage.setItem("tsuzuriniwa:tools-expanded","true");
     const r = indexedDB.open("tsuzuriniwa", 1);
     r.onupgradeneeded = () =>
       r.result.createObjectStore("state").put(value, "main");

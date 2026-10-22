@@ -61,7 +61,7 @@ test("characters retain separate beliefs before and after acquiring a secret", a
   );
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "人物の認識");
   await page.getByLabel("認識を確認する年", { exact: true }).fill("0");
   await expect(page.locator(".studio-section")).toContainText(
@@ -125,7 +125,7 @@ test("era views display past drafts read-only and return to intact current setti
   );
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await page
     .getByLabel("設定の時点", { exact: true })
     .selectOption({ label: "古い時代" });

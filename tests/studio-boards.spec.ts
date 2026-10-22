@@ -25,7 +25,7 @@ test("glossary preserves definitions, readings, aliases and links across reload"
   await dialog.getByRole("button", { name: "保存", exact: true }).click();
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "用語辞典");
   await page.getByLabel("用語を検索", { exact: true }).fill("別の呼称");
   await expect(page.locator(".studio-record")).toContainText("独自の固有名詞");
@@ -61,7 +61,7 @@ test("image reference boards retain images and source notes locally", async ({
   await dialog.getByRole("button", { name: "保存", exact: true }).click();
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "画像資料");
   await expect(page.locator(".studio-image-open img")).toBeVisible();
   await page.getByRole("button", { name: "詳細・編集", exact: true }).click();
@@ -123,7 +123,7 @@ test("plot scenes can be reordered and moved, and removing a column preserves sc
   await expect(page.locator(".plot-scene")).toHaveCount(2);
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "プロットボード");
   await expect(page.locator(".plot-column").first()).toContainText("場面B");
   expect(

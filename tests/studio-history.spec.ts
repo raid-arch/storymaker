@@ -1,17 +1,16 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 async function person(page: Page) {
-  await page.locator(".project-hero").waitFor();
-  if (await page.locator(".bottom-nav").isVisible())
-    await page
-      .locator(".bottom-nav")
-      .getByRole("button", { name: "人物", exact: true })
-      .click();
-  else
-    await page
-      .locator(".main-nav")
-      .getByRole("button", { name: /キャラクター/ })
-      .click();
+  await page.locator(".topbar").waitFor();
+  const menu = page.getByRole("button", {
+    name: "メニューを開く",
+    exact: true,
+  });
+  if (await menu.isVisible()) await menu.click();
+  await page
+    .locator(".main-nav")
+    .getByRole("button", { name: /キャラクター/ })
+    .click();
   await page
     .locator(".entry-card")
     .filter({ has: page.getByRole("heading", { name: "人物A", exact: true }) })

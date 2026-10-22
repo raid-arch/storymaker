@@ -42,7 +42,7 @@ test("templates create reusable detailed settings and preserve existing values",
   ).toBeVisible();
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "設定テンプレート");
   await expect(
     page.getByRole("heading", { name: "人物共通項目", exact: true }),
@@ -99,7 +99,7 @@ test("public mode and exports show only independently written public text", asyn
     .click();
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "公開情報");
   await expect(
     page.getByRole("heading", { name: "公開対象：1 件", exact: true }),

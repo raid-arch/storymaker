@@ -20,6 +20,7 @@ import {
   isSyndrome,
 } from "./model";
 import FreeTextInput from "./FreeTextInput";
+import { parentWorld } from "./workspaces";
 import WritingField from "./WritingField";
 import { CharacterSyndromes, DiseaseList } from "./Syndromes";
 import type { Data, Entry, Project } from "./model";
@@ -149,6 +150,7 @@ export function ProjectForm({
 }) {
   const world = isWorldLibrary(value);
   const sources = referencedWorldIds(data, value);
+  const parent = parentWorld(data, value);
   return (
     <form
       onSubmit={(e) => {
@@ -208,43 +210,90 @@ export function ProjectForm({
         </label>
       </div>
       {!world && (
-        <fieldset className="world-reference-picker">
-          <legend>参照する世界観</legend>
-          <p>
-            事前に作った設定資料を選びます。ツリーの所属とは別に、複数の世界観を参照できます。
+        <>
+          <label>
+            親の世界観
+            <select
+              aria-label="親の世界観"
+              value={parent?.id || ""}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  collectionId: e.target.value,
+                  worldIds: [
+                    ...new Set([
+                      ...(value.worldIds || []).filter(
+                        (id) => id !== parent?.id,
+                      ),
+                      ...(e.target.value ? [e.target.value] : []),
+                    ]),
+                  ],
+                })
+              }
+            >
+              <option value="">親を持たない物語</option>
+              {data.projects
+                .filter(
+                  (p) =>
+                    isWorldLibrary(p) &&
+                    p.id !== value.id &&
+                    !sharedProjectIds(data, p.id).has(value.id),
+                )
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <p className="parent-picker-note">
+            {parent
+              ? `${parent.name} の時間・人物・場所・病気などを共通設定として使います。物語だけの内容は、この物語に保存します。`
+              : "親を選ぶと、その世界観の共通設定に準拠して制作できます。あとから選ぶこともできます。"}
           </p>
-          {data.projects
-            .filter(
-              (p) =>
-                p.id !== value.id &&
-                !sharedProjectIds(data, p.id).has(value.id) &&
-                (isWorldLibrary(p) || sources.includes(p.id)),
-            )
-            .map((p) => (
-              <label key={p.id}>
-                <input
-                  type="checkbox"
-                  checked={sources.includes(p.id)}
-                  onChange={(event) =>
-                    onChange({
-                      ...value,
-                      parentId: "",
-                      worldIds: event.target.checked
-                        ? [...sources, p.id]
-                        : sources.filter((id) => id !== p.id),
-                    })
-                  }
-                />
-                {p.name}
-                {!isWorldLibrary(p) && "（以前の共有元）"}
-              </label>
-            ))}
-          {!data.projects.some(isWorldLibrary) && (
-            <p className="muted">
-              世界観ライブラリで資料を作成すると、ここから選べます。参照なしでも執筆できます。
-            </p>
-          )}
-        </fieldset>
+          <details className="additional-world-references">
+            <summary>追加の参照資料（必要な場合）</summary>
+
+            <fieldset className="world-reference-picker">
+              <legend>追加で参照する資料</legend>
+              <p>
+                親の世界観は自動で使います。必要な場合だけ、ほかの資料も追加できます。
+              </p>
+              {data.projects
+                .filter(
+                  (p) =>
+                    p.id !== value.id &&
+                    !sharedProjectIds(data, p.id).has(value.id) &&
+                    (isWorldLibrary(p) || sources.includes(p.id)),
+                )
+                .map((p) => (
+                  <label key={p.id}>
+                    <input
+                      type="checkbox"
+                      checked={p.id === parent?.id || sources.includes(p.id)}
+                      disabled={p.id === parent?.id}
+                      onChange={(event) =>
+                        onChange({
+                          ...value,
+                          parentId: "",
+                          worldIds: event.target.checked
+                            ? [...sources, p.id]
+                            : sources.filter((id) => id !== p.id),
+                        })
+                      }
+                    />
+                    {p.name}
+                    {!isWorldLibrary(p) && "（以前の共有元）"}
+                  </label>
+                ))}
+              {!data.projects.some(isWorldLibrary) && (
+                <p className="muted">
+                  世界観ライブラリで資料を作成すると、ここから選べます。参照なしでも執筆できます。
+                </p>
+              )}
+            </fieldset>
+          </details>
+        </>
       )}
       <label>
         説明

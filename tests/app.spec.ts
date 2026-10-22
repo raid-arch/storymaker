@@ -144,6 +144,7 @@ test("world categories, tags and full-text truth search", async ({ page }) => {
   await page.getByLabel("タグを追加").fill("言語");
   await page.getByLabel("タグを追加").press("Enter");
   await saved(page);
+  if(await page.getByRole("button",{name:"設定を検索する",exact:true}).isVisible())await page.getByRole("button",{name:"設定を検索する",exact:true}).click();
   await page.getByLabel("すべての設定を検索").fill("忘却の文字");
   await expect(page.locator(".entry-card")).toHaveCount(1);
   await expect(page.locator(".entry-card")).toContainText("古い言葉");
@@ -247,6 +248,7 @@ test("backup download, invalid backup protection, restore and Markdown export", 
   await page
     .getByRole("button", { name: "設定・バックアップ", exact: true })
     .click();
+  await page.getByRole("button",{name:"データの受け渡し",exact:true}).click();
   const dl = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "全データをJSONでバックアップ" })
@@ -279,6 +281,7 @@ test("backup download, invalid backup protection, restore and Markdown export", 
   await page
     .getByRole("button", { name: "設定・バックアップ", exact: true })
     .click();
+  await page.getByRole("button",{name:"データの受け渡し",exact:true}).click();
   const md = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "「検証用の物語」を書き出す" })

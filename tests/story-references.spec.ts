@@ -20,12 +20,7 @@ test("create independent world library and a story referencing it without parent
   await expect(
     page.getByRole("heading", { name: "あなたの物語を、ここから。" }),
   ).toBeVisible();
-  await sidebar(page);
-  await page
-    .locator(".sidebar-bottom")
-    .getByRole("button", { name: "世界観ライブラリ", exact: true })
-    .click();
-  await page.getByRole("button", { name: "世界観を作成", exact: true }).click();
+  await page.getByRole("button", { name: /新しく作る/ }).click();
   await page
     .getByRole("textbox", { name: /世界観の名前/ })
     .fill("独立した世界資料");
@@ -44,27 +39,38 @@ test("create independent world library and a story referencing it without parent
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("最初のストーリー");
   await expect(
-    page.getByRole("checkbox", { name: "独立した世界資料", exact: true }),
-  ).toBeChecked();
+    page.getByLabel("親の世界観", { exact: true }).locator("option:checked"),
+  ).toHaveText("独立した世界資料");
   await expect(page.getByLabel("上位プロジェクト")).toHaveCount(0);
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
-  await expect(
-    page.getByRole("region", { name: "ストーリーと参照資料" }),
-  ).toContainText("参照する世界観：独立した世界資料");
+  await expect(page.locator(".workspace-scope-strip")).toContainText(
+    "独立した世界資料 の設定に準拠",
+  );
   await page
-    .getByRole("button", { name: "参照する世界観を変更", exact: true })
+    .getByRole("button", { name: "親を選ぶ・変更", exact: true })
+    .click();
+  await page.getByLabel("親の世界観", { exact: true }).selectOption("");
+  await page.getByRole("button", { name: "完了", exact: true }).click();
+  await expect(page.locator(".workspace-scope-strip")).toContainText(
+    "親の世界観は未設定",
+  );
+  await expect(page.locator(".save-indicator")).toContainText("保存済み");
+  await page
+    .getByRole("button", { name: "メニューを開く" })
+    .isVisible()
+    .then(async (visible) => {
+      if (visible)
+        await page.getByRole("button", { name: "メニューを開く" }).click();
+    });
+  await page
+    .getByRole("button", { name: "設定・バックアップ", exact: true })
     .click();
   await page
-    .getByRole("checkbox", { name: "独立した世界資料", exact: true })
-    .uncheck();
-  await page.getByRole("button", { name: "完了", exact: true }).click();
-  await expect(
-    page.getByRole("region", { name: "ストーリーと参照資料" }),
-  ).toContainText("未選択");
-  await expect(page.locator(".save-indicator")).toContainText("保存済み");
+    .getByRole("button", { name: "前回のプロジェクトを開く", exact: true })
+    .click();
   await page.reload();
   await sidebar(page);
   await page
@@ -117,6 +123,15 @@ test("chronological dates and story presentation order are independent and persi
     { ...newEntry("b", "event"), name: "別の物語の出来事" },
   ];
   await page.addInitScript((value) => {
+    if (!localStorage.getItem("tsuzuriniwa:launch-mode")) {
+      localStorage.setItem("tsuzuriniwa:launch-mode", "resume");
+      localStorage.setItem(
+        "tsuzuriniwa:active-workspace",
+        value.projects[0].id,
+      );
+      localStorage.setItem("tsuzuriniwa:resume-view", "dashboard");
+    }
+    localStorage.setItem("tsuzuriniwa:tools-expanded", "true");
     const request = indexedDB.open("tsuzuriniwa", 1);
     request.onupgradeneeded = () =>
       request.result.createObjectStore("state").put(value, "main");

@@ -108,7 +108,7 @@ test("map editor saves linked cities, touch dragging and polygon territories", a
   ).toHaveCount(1);
   await saved(page);
   await page.reload();
-  await expect(page.locator(".project-hero")).toBeVisible();
+  await expect(page.locator(".topbar")).toBeVisible();
   await navStudio(page, "世界地図");
   await expect
     .poll(() =>

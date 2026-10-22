@@ -93,6 +93,7 @@ test("categories, project types, clue progress, and relationships accept new nam
     .click();
   await saved(page);
   await page.reload();
+  await nav(page, "ダッシュボード");
   await page
     .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();

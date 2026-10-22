@@ -3,8 +3,10 @@ import type { Page } from "@playwright/test";
 import { emptyData, newProject, newEntry } from "../src/model";
 import { exportProjectPackage } from "../src/projectPackages";
 async function settings(page: Page) {
+  await expect(page.locator(".topbar")).toBeVisible();
   const menu=page.getByRole("button",{name:"メニューを開く",exact:true});if(await menu.isVisible())await menu.click();
   await page.getByRole("button",{name:"設定・バックアップ",exact:true}).click();
+  await page.getByRole("button",{name:"データの受け渡し",exact:true}).click();
 }
 test("adds a scoped world/story package without replacing current data and exports selected copies",async({page})=>{
   const d=emptyData();d.projects=[{...newProject("world"),id:"w",name:"ユーフラス"},{...newProject(),id:"s",name:"明日も花は咲く",worldIds:["w"],collectionId:"w"}];
