@@ -1,4 +1,6 @@
 import TimelineBoard from "./TimelineBoard";
+import ProjectPackagePanel from "./ProjectPackagePanel";
+import { addProjectPackage, readProjectFile } from "./projectPackages";
 import ProjectTree from "./ProjectTree";
 import SettingGenrePicker from "./SettingGenrePicker";
 import { moveOnShelf, shelfSources } from "./collections";
@@ -299,6 +301,7 @@ export default function App() {
   const [publicPreview, setPublicPreview] = useState("");
   const [undoNotice, setUndoNotice] = useState(false);
   const [imported, setImported] = useState<Data | null>(null);
+  const [importMode, setImportMode] = useState<"add" | "replace">("replace");
   const fileRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [online, setOnline] = useState(navigator.onLine);
@@ -661,7 +664,9 @@ export default function App() {
       if (file.size > 100 * 1024 * 1024)
         throw new Error("100MB以下のバックアップを選択してください。");
       const raw = JSON.parse(await file.text());
-      setImported(organizeStories(validateBackup(raw)));
+      const parsed = readProjectFile(raw);
+      if (parsed.packaged) setImportMode("add");
+      setImported(parsed.data);
     } catch (e) {
       setNotice(
         e instanceof Error ? e.message : "バックアップを読み込めませんでした。",
@@ -2160,6 +2165,7 @@ export default function App() {
                     }
                   />
                   <div className="settings-grid">
+                    <ProjectPackagePanel data={data} currentId={currentId} notice={setNotice} onImport={() => { setImportMode("add"); fileRef.current?.click(); }} />
                     <section className="panel settings-panel">
                       <span className="settings-icon">
                         <ShieldCheck size={27} />
@@ -2183,7 +2189,7 @@ export default function App() {
                       </button>
                       <button
                         className="button subtle full"
-                        onClick={() => fileRef.current?.click()}
+                        onClick={() => { setImportMode("replace"); fileRef.current?.click(); }}
                       >
                         <Upload size={17} />
                         JSONから復元・別の端末へ移行
@@ -2763,12 +2769,13 @@ export default function App() {
           <div className="confirm-icon">
             <Upload size={26} />
           </div>
-          <h2>バックアップを復元しますか？</h2>
+          <h2>{importMode === "add" ? "世界観・ストーリーを追加しますか？" : "バックアップを復元しますか？"}</h2>
           <p className="confirm-message">
             読み込んだ {imported.projects.length} ストーリー・
             {imported.entries.length}{" "}
-            件の設定で、現在の全データを置き換えます。復元前に現在のJSONを書き出すことをおすすめします。
+            件の設定を{importMode === "add" ? "別のコピーとして追加します。現在のデータ・表示設定は保持します。" : "使って、現在の全データを置き換えます。復元前に現在のJSONを書き出すことをおすすめします。"}
           </p>
+          <ul className="package-import-preview">{imported.projects.map((p) => <li key={p.id}>{p.name}（{isWorldLibrary(p) ? "世界観" : p.type}）</li>)}</ul>
           <button className="button subtle full" onClick={backup}>
             <Download size={16} />
             現在のデータを先にバックアップ
@@ -2778,16 +2785,23 @@ export default function App() {
               キャンセル
             </button>
             <button
-              className="button danger-fill"
+              className={`button ${importMode === "add" ? "primary" : "danger-fill"}`}
               onClick={() => {
-                change(() => imported, "", false);
-                setProjectId(imported.projects[0]?.id || "");
-                navigate("dashboard");
-                setImported(null);
-                setNotice("バックアップを復元しました。");
+                try {
+                  if (importMode === "add") {
+                    change((d) => addProjectPackage(d, imported));
+                    setNotice("世界観・ストーリーを追加しました。既存データは保持しています。");
+                  } else {
+                    change(() => imported, "", false);
+                    setProjectId(imported.projects[0]?.id || "");
+                    navigate("dashboard");
+                    setNotice("バックアップを復元しました。");
+                  }
+                  setImported(null);
+                } catch (error) { setNotice(error instanceof Error ? error.message : "読み込めませんでした。"); }
               }}
             >
-              全データを置き換えて復元
+              {importMode === "add" ? "既存データを残して追加" : "全データを置き換えて復元"}
             </button>
           </div>
         </Modal>

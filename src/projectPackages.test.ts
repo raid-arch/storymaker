@@ -1,0 +1,50 @@
+import { expect, it } from "vitest";
+import { emptyData, newEntry, newProject, validateBackup } from "./model";
+import { emptyStudio } from "./studio/model";
+import { addProjectPackage, exportProjectPackage, readProjectFile } from "./projectPackages";
+function source() {
+  const d = emptyData();
+  d.projects = [{...newProject("world"),id:"w",name:"ユーフラス"},{...newProject(),id:"s",name:"明日も花は咲く",collectionId:"w",worldIds:["w"]},{...newProject(),id:"private",name:"別の作品"}];
+  d.entries=[{...newEntry("w","character"),id:"person",name:"人物",body:"person",fields:{合言葉:"person"}},{...newEntry("s","world"),id:"place",name:"舞台",links:["person"]},{...newEntry("private","world"),id:"secret",body:"持ち出さない本文"}];
+  d.positions={person:{x:1,y:2}};
+  d.studio=emptyStudio();
+  d.studio.columns=[{id:"column",projectId:"s",name:"章",chapterId:"",order:0}];
+  d.studio.scenes=[{id:"scene",projectId:"s",columnId:"column",name:"場面",summary:"",note:"",status:"仮設定",order:0,links:["person","place"],castIds:["person"],participantStates:{person:"その場の様子"},placeId:"place",manuscript:"本文"}];
+  d.studio.portrayals=[{id:"portrayal",projectId:"s",entryId:"person",role:"主人公",goal:"",state:"",notes:""}];
+  d.studio.revisions=[{id:"rev",projectId:"private",target:"entry",targetId:"secret",at:new Date().toISOString(),note:"",snapshot:d.entries[2],imageId:""}];
+  return d;
+}
+it("exports a selected story with its world, preserves scene references and excludes other stories and private history", () => {
+  const d=source(); const before=structuredClone(d);
+  const pack=exportProjectPackage(d,["s"]);
+  expect(pack.data.projects.map((p)=>p.id)).toEqual(["w","s"]);
+  expect(pack.data.studio?.scenes).toEqual(d.studio?.scenes);
+  expect(JSON.stringify(pack)).not.toContain("持ち出さない本文");
+  expect(pack.data.studio?.revisions).toEqual([]);
+  expect(readProjectFile(JSON.parse(JSON.stringify(pack))).packaged).toBe(true);
+  expect(d).toEqual(before);
+  expect(exportProjectPackage(d,["w"]).data.projects).toHaveLength(2);
+});
+it("adds with fresh IDs without overwriting current projects, prose, preferences, or last backup", () => {
+  const d=source(), pack=exportProjectPackage(d,["s"]);
+  d.lastBackup="2026-10-22";d.theme="light";
+  const before=structuredClone(d);
+  const result=addProjectPackage(d,pack.data);
+  expect(result.projects.slice(0,3)).toEqual(before.projects);
+  expect(result.entries.slice(0,3)).toEqual(before.entries);
+  expect(result.theme).toBe("light");expect(result.lastBackup).toBe(before.lastBackup);
+  const world=result.projects[3],story=result.projects[4],person=result.entries[3],place=result.entries[4];
+  expect(story.worldIds).toEqual([world.id]);expect(story.collectionId).toBe(world.id);
+  expect(person.id).not.toBe("person");expect(person.body).toBe("person");expect(person.fields.合言葉).toBe("person");
+  expect(place.links).toEqual([person.id]);expect(result.positions[person.id]).toEqual({x:1,y:2});
+  const scene=result.studio!.scenes[1];
+  expect(scene.columnId).toBe(result.studio!.columns[1].id);
+  expect(scene.participantStates).toEqual({[person.id]:"その場の様子"});
+  expect(scene.castIds).toEqual([person.id]);expect(scene.placeId).toBe(place.id);
+  expect(result.studio!.portrayals[1].entryId).toBe(person.id);
+  expect(validateBackup(result)).toBeTruthy();
+  const twice=addProjectPackage(result,pack.data);expect(twice.projects).toHaveLength(7);
+  expect(new Set(twice.projects.map((p)=>p.id)).size).toBe(7);
+  expect(d).toEqual(before);
+  expect(()=>readProjectFile({...pack,version:2})).toThrow();
+});
