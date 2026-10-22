@@ -69,7 +69,7 @@ test("categories, project types, clue progress, and relationships accept new nam
   await page.locator(".entry-card").filter({ hasText: "検証用の建物" }).click();
   await page.getByLabel("カテゴリ", { exact: true }).fill("空間・異界");
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
-  await page.getByRole("button", { name: "空間・異界", exact: true }).click();
+  await page.getByLabel("設定のジャンル", { exact: true }).selectOption("world:空間・異界");
   await expect(page.locator(".entry-card")).toHaveCount(1);
   await nav(page, "伏線・謎");
   await page.locator(".entry-card").click();

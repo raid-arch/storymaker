@@ -39,6 +39,7 @@ export interface Project {
   /** Visual shelf placement, separate from setting references and legacy parents. */
   collectionId?: string;
   eventOrder?: string[];
+  storyPlan?: Record<string, string>;
   updatedAt: string;
 }
 export interface Entry {
@@ -425,6 +426,7 @@ export function validateBackup(raw: unknown): Data {
       !str(p.type) ||
       (p.workspaceKind !== undefined &&
         !["story", "world"].includes(p.workspaceKind)) ||
+      (p.storyPlan !== undefined && !obj(p.storyPlan)) ||
       (p.collectionId !== undefined && !str(p.collectionId)) ||
       (p.worldIds !== undefined && !list(p.worldIds)) ||
       (p.eventOrder !== undefined && !list(p.eventOrder)) ||

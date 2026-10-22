@@ -111,6 +111,12 @@ export interface Scene {
   year?: number;
   links: string[];
   manuscript?: string;
+  purpose?: string;
+  conflict?: string;
+  outcome?: string;
+  povId?: string;
+  tension?: number;
+  clueBeats?: Record<string, string>;
   placeState?: string;
   timeText?: string;
   placeId?: string;
@@ -448,13 +454,19 @@ export function validateStudio(raw: unknown): Studio {
       optionalNumber(v.year) &&
       [
         "manuscript",
+        "purpose",
+        "conflict",
+        "outcome",
+        "povId",
         "timeText",
         "placeId",
         "eventId",
         "relationshipNotes",
         "placeState",
       ].every((key) => v[key] === undefined || text(v[key])) &&
+      (v.tension === undefined || (Number.isInteger(v.tension) && Number(v.tension) >= 0 && Number(v.tension) <= 5)) &&
       (v.castIds === undefined || strings(v.castIds)) &&
+      (v.clueBeats === undefined || texts(v.clueBeats)) &&
       (v.participantStates === undefined || texts(v.participantStates)),
     portrayals: (v) =>
       hasText(v, ["projectId", "entryId", "role", "goal", "state", "notes"]) &&
@@ -574,6 +586,8 @@ export function cleanStudio(
       })),
       scenes: links(keep(s.scenes)).map((scene) => ({
         ...scene,
+        clueBeats: scene.clueBeats && Object.fromEntries(Object.entries(scene.clueBeats).filter(([id]) => !entryIds.has(id))),
+        povId: scene.povId && entryIds.has(scene.povId) ? "" : scene.povId,
         placeId:
           scene.placeId && entryIds.has(scene.placeId) ? "" : scene.placeId,
         eventId:

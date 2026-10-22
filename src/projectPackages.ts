@@ -4,15 +4,15 @@ import { cleanStudio, studioOf } from "./studio/model";
 import { shelfDescendants } from "./collections";
 export const packageFormat = "tsuzuriniwa-project-package";
 export interface ProjectPackage { format: typeof packageFormat; version: 1; data: Data }
-const refs = new Set(["id", "projectId", "parentId", "collectionId", "worldIds", "eventOrder", "links", "from", "to", "characterId", "entryId", "sceneId", "eraId", "imageId", "targetId", "columnId", "chapterId", "beforeId", "afterId", "placeId", "eventId", "castIds"]);
+const refs = new Set(["id", "projectId", "parentId", "collectionId", "worldIds", "eventOrder", "links", "from", "to", "characterId", "entryId", "sceneId", "eraId", "imageId", "targetId", "columnId", "chapterId", "beforeId", "afterId", "placeId", "povId", "eventId", "castIds"]);
 /** Only rewrite structural IDs; prose, free fields, and custom values are opaque. */
 function rewrite(value: unknown, mapping: Map<string, string>, key = ""): unknown {
   if (typeof value === "string") return refs.has(key) ? mapping.get(value) ?? value : value;
   if (Array.isArray(value)) return value.map((item) => rewrite(item, mapping, key)).filter((item) => item !== "");
   if (!value || typeof value !== "object") return value;
-  if (key === "fields" || key === "custom") return structuredClone(value);
+  if (key === "fields" || key === "custom" || key === "storyPlan") return structuredClone(value);
   return Object.fromEntries(Object.entries(value).map(([k, v]) => [
-    key === "positions" || key === "participantStates" ? mapping.get(k) ?? k : k,
+    key === "positions" || key === "participantStates" || key === "clueBeats" ? mapping.get(k) ?? k : k,
     rewrite(v, mapping, k),
   ]).filter(([k]) => k !== ""));
 }

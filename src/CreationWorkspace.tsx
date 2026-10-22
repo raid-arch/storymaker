@@ -32,6 +32,7 @@ import { storyManuscript } from "./studio/creation";
 import { moveScene } from "./studio/plot";
 import type { Confirm, Mutation } from "./studio/ui";
 import Modal from "./Modal";
+import StoryPlanner from "./StoryPlanner";
 import SettingGenrePicker, { matchesSettingGenre } from "./SettingGenrePicker";
 import FreeTextInput from "./FreeTextInput";
 import BaseWritingField from "./WritingField";
@@ -109,7 +110,9 @@ function StoryMaker({
           "character"
           ? "cast"
           : "references"
-        : "scenes",
+        : initialSceneId && scenes.some((item) => item.id === initialSceneId)
+          ? "scenes"
+          : (() => { try { const saved = localStorage.getItem(`tsuzuriniwa:workbench:${projectId}`); return saved && ["planning", "scenes", "cast", "references", "timeline"].includes(saved) ? saved : "planning"; } catch { return "planning"; } })(),
     ),
     [sceneId, setSceneId] = useState(() => {
       let saved = "";
@@ -137,6 +140,7 @@ function StoryMaker({
       } catch {}
     }
   }, [projectId, sceneId]);
+  useEffect(() => { try { localStorage.setItem(`tsuzuriniwa:workbench:${projectId}`, tab); } catch {} }, [projectId, tab]);
   const [chronological, setChronological] = useState(false);
   const [personQuery, setPersonQuery] = useState(""),
     [referenceQuery, setReferenceQuery] = useState(""),
@@ -181,7 +185,7 @@ function StoryMaker({
   }
   const names = (id?: string) =>
     data.entries.find((entry) => entry.id === id)?.name || "未設定";
-  const chapters = [{ id: "", name: "未分類" }, ...columns];
+  const chapters = [...columns, { id: "", name: "未分類" }];
   return (
     <section className="creation-workspace" aria-label="ストーリー制作画面">
       <header className="page-title">
@@ -245,6 +249,7 @@ function StoryMaker({
       </section>
       <nav className="creation-tabs" aria-label="制作の作業切替">
         {[
+          ["planning", "プロット設計"],
           ["scenes", "構成・執筆"],
           ["cast", "登場人物・関係"],
           ["references", "舞台・設定資料"],
@@ -275,6 +280,7 @@ function StoryMaker({
         </span>
         <small>編集内容は自動保存されます。</small>
       </div>
+      {tab === "planning" && <StoryPlanner data={data} project={project} change={change} onWrite={(id) => { setSceneId(id); setColumnId(studioOf(data).scenes.find((s) => s.id === id)?.columnId || ""); setTab("scenes"); }} onCast={() => setTab("cast")} onTimeline={() => setTab("timeline")} />}
       {tab === "scenes" && (
         <div className="creation-layout">
           <aside className="panel creation-outline" aria-label="章とシーン">
@@ -421,6 +427,7 @@ function StoryMaker({
               <section className="panel creation-section">
                 <div className="creation-heading">
                   <h2>シーンを書く</h2>
+                  <button className="button subtle" onClick={() => setTab("planning")}>設計図へ戻る</button>
                   <div className="creation-inline-actions">
                     {[-1, 1].map((offset) => {
                       const siblings = scenes
@@ -540,6 +547,7 @@ function StoryMaker({
                     />
                   </label>
                 </div>
+                {(scene.purpose || scene.conflict || scene.outcome || scene.povId) && <div className="scene-writing-guide" aria-label="執筆中のプロット参照"><strong>この場面の設計</strong>{scene.povId && <span>視点：{names(scene.povId)}</span>}{scene.purpose && <p>目的：{scene.purpose}</p>}{scene.conflict && <p>対立：{scene.conflict}</p>}{scene.outcome && <p>変化：{scene.outcome}</p>}</div>}
                 <WritingField
                   label="シーンの本文"
                   value={scene.manuscript || ""}

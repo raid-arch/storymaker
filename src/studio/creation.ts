@@ -62,7 +62,7 @@ export function patchScene(
       next.links = [
         ...new Set(
           [
-            ...scene.links.filter((ref) => !oldRefs.has(ref)),
+            ...(patch.links || scene.links).filter((ref) => !oldRefs.has(ref)),
             ...(next.castIds || []),
             next.placeId || "",
             next.eventId || "",
@@ -148,7 +148,7 @@ export function storyManuscript(data: Data, projectId: string): string {
     .slice()
     .sort((a, b) => a.order - b.order);
   const safe = (value: string) => value.replace(/([\\`*_{}\[\]<>])/g, "\\$1");
-  const chapters = [{ id: "", name: "未分類" }, ...columns];
+  const chapters = [...columns, { id: "", name: "未分類" }];
   return (
     `# ${safe(project?.name || "ストーリー")}\n\n` +
     chapters
@@ -186,7 +186,7 @@ export function orderedCreationScenes(
     .filter((item) => item.projectId === projectId)
     .slice()
     .sort((a, b) => a.order - b.order);
-  const rank = (id: string) => columns.findIndex((item) => item.id === id);
+  const rank = (id: string) => { const index = columns.findIndex((item) => item.id === id); return index < 0 ? columns.length : index; };
   return studio.scenes
     .filter((item) => item.projectId === projectId)
     .slice()
