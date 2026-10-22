@@ -23,6 +23,7 @@ it("rejects invalid appearance settings without accepting unknown CSS or dashboa
   for (const patch of [
     { accent: "url(...)" },
     { fontSize: 400 },
+    { mobileEditor: "popup" },
     { dashboard: ["hero", "hero"] },
     { dashboard: ["unknown"] },
   ]) {

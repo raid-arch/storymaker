@@ -1,3 +1,5 @@
+import TrashPanel from "./TrashPanel";
+import { moveToTrash, restoreFromTrash, permanentlyDelete } from "./trash";
 import TimelineBoard from "./TimelineBoard";
 import ProjectGateway from "./ProjectGateway";
 import WorkspaceContext from "./WorkspaceContext";
@@ -68,8 +70,6 @@ import {
   isWorldLibrary,
   referencedWorldIds,
   organizeStories,
-  deleteEntry,
-  deleteProject,
   descendants,
   kindLabels,
   markdown,
@@ -262,6 +262,7 @@ export default function App() {
   const dataRef = useRef<Data | null>(null);
   dataRef.current = data;
   const [session, setSession] = useState<"home" | "picker" | "editor">("home");
+  const [trashOpen, setTrashOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState("general");
   const [launchMode, setLaunchMode] = useState<"home" | "resume">(
     startupChoice,
@@ -843,22 +844,22 @@ export default function App() {
   const removeEntry = (entry: Entry) =>
     setConfirm({
       title: "この設定を削除しますか？",
-      message: `「${entry.name}」と、この設定へのリンク・人物関係も削除されます。操作は取り消せます。`,
+      message: `「${entry.name}」をゴミ箱に移します。関連リンクや人物関係は一時的に外れ、復元時に戻せます。`,
       action: () => {
-        change((d) => deleteEntry(d, entry.id));
+        change((d) => moveToTrash(d, "entry", entry.id), "", false);
         if (entryId === entry.id) setEntryId("");
-        setNotice("設定を削除しました。");
+        setNotice("設定をゴミ箱に移しました。");
         setUndoNotice(true);
       },
     });
   const removeProject = (p: Project) =>
     setConfirm({
-      title: "ストーリーを削除しますか？",
-      message: `「${p.name}」と、この保存先の設定を削除します。参照しているほかのストーリーや世界観は残ります。必要に応じて先にバックアップしてください。操作は取り消せます。`,
+      title: "プロジェクトを削除しますか？",
+      message: `「${p.name}」と、この保存先の設定をゴミ箱に移します。参照しているほかの物語や世界観は残ります。ゴミ箱から復元できます。`,
       action: () => {
-        change((d) => deleteProject(d, p.id));
+        change((d) => moveToTrash(d, "project", p.id), "", false);
         setProjectId("");
-        setNotice("ストーリーを削除しました。");
+        setNotice("プロジェクトをゴミ箱に移しました。");
         setUndoNotice(true);
       },
     });
@@ -928,6 +929,8 @@ export default function App() {
           screen={session}
           lastId={lastOpenedId}
           saveState={saveState}
+          onActions={(id) => setActionTarget({ kind: "project", id })}
+          onTrash={() => setTrashOpen(true)}
           onScreen={setSession}
           onOpen={(id) => {
             selectProject(id);
@@ -2634,6 +2637,13 @@ export default function App() {
                         }
                       />
                       <section className="panel launch-settings">
+                        <button
+                          className="button subtle"
+                          onClick={() => setTrashOpen(true)}
+                        >
+                          <Trash2 size={16} />
+                          ゴミ箱（{data.trash?.length || 0}）
+                        </button>
                         <h2>起動時に開く画面</h2>
                         <p>この端末で次回からどこを開くかを選べます。</p>
                         <div className="choice-group">
@@ -2924,6 +2934,46 @@ export default function App() {
             </button>
           </nav>
         </>
+      )}
+      {trashOpen && (
+        <Modal wide label="ゴミ箱" onClose={() => setTrashOpen(false)}>
+          <button
+            className="icon-button trash-close"
+            aria-label="ゴミ箱を閉じる"
+            onClick={() => setTrashOpen(false)}
+          >
+            <X size={20} />
+          </button>
+          <TrashPanel
+            items={data.trash || []}
+            onRestore={(id) => {
+              try {
+                const restored = restoreFromTrash(data, id);
+                change(() => restored, "", false);
+                setNotice("ゴミ箱から復元しました。");
+              } catch (error) {
+                setNotice(
+                  error instanceof Error
+                    ? error.message
+                    : "復元できませんでした。",
+                );
+              }
+            }}
+            onDelete={(item) =>
+              setConfirm({
+                title: "完全に削除しますか？",
+                message: `「${item.name}」をゴミ箱から完全に削除します。この操作は取り消せず、復元できなくなります。`,
+                action: () => {
+                  change((d) => permanentlyDelete(d, item.id), "", false);
+                  history.current = [];
+                  lastHistory.current = { id: "", at: 0 };
+                  setUndoNotice(false);
+                  setNotice("完全に削除しました。");
+                },
+              })
+            }
+          />
+        </Modal>
       )}
       {notice && (
         <div className="toast" role="status">

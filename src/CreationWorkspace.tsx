@@ -1,3 +1,5 @@
+import EditorSplit from "./EditorSplit";
+import SceneTimelineGraph from "./SceneTimelineGraph";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
@@ -171,6 +173,10 @@ function StoryMaker({
       localStorage.setItem(`tsuzuriniwa:workbench:${projectId}`, tab);
     } catch {}
   }, [projectId, tab]);
+  const [detailRequested, setDetailRequested] = useState(
+    Boolean(initialSceneId),
+  );
+  const [timelineView, setTimelineView] = useState("graph");
   const [chronological, setChronological] = useState(false);
   const [personQuery, setPersonQuery] = useState(""),
     [referenceQuery, setReferenceQuery] = useState(""),
@@ -198,6 +204,7 @@ function StoryMaker({
       })),
     );
     setSceneId(item.id);
+    setDetailRequested(true);
     setTab("scenes");
   }
   function selectCast(id: string, checked: boolean) {
@@ -320,6 +327,7 @@ function StoryMaker({
             setColumnId(
               studioOf(data).scenes.find((s) => s.id === id)?.columnId || "",
             );
+            setDetailRequested(true);
             setTab("scenes");
           }}
           onCast={() => setTab("cast")}
@@ -327,7 +335,12 @@ function StoryMaker({
         />
       )}
       {tab === "scenes" && (
-        <div className="creation-layout">
+        <EditorSplit
+          mode={data.appearance?.mobileEditor}
+          selection={sceneId}
+          label="シーン"
+          initialDetail={detailRequested}
+        >
           <aside className="panel creation-outline" aria-label="章とシーン">
             <form
               className="creation-inline-form"
@@ -855,10 +868,15 @@ function StoryMaker({
               </button>
             </div>
           )}
-        </div>
+        </EditorSplit>
       )}
       {tab === "cast" && (
-        <div className="creation-layout">
+        <EditorSplit
+          mode={data.appearance?.mobileEditor}
+          selection={person?.id || ""}
+          label="人物"
+          initialDetail={Boolean(initialSceneId)}
+        >
           <aside className="panel creation-index">
             <h2>人物を選ぶ</h2>
             <label>
@@ -951,7 +969,7 @@ function StoryMaker({
               </>
             )}
           </div>
-        </div>
+        </EditorSplit>
       )}
       {tab === "timeline" && (
         <section
@@ -962,63 +980,107 @@ function StoryMaker({
           <div className="creation-inline-actions">
             <button
               className="button subtle"
-              aria-pressed={!chronological}
-              onClick={() => setChronological(false)}
+              aria-pressed={timelineView === "graph"}
+              onClick={() => setTimelineView("graph")}
             >
-              章・シーンの順番
+              グラフ
             </button>
             <button
               className="button subtle"
-              aria-pressed={chronological}
-              onClick={() => setChronological(true)}
+              aria-pressed={timelineView === "list"}
+              onClick={() => setTimelineView("list")}
             >
-              共通年の順番
+              一覧
             </button>
           </div>
-          <p className="muted">
-            共通年の順番では年代未定を最後に表示します。「翌朝」などの自由な時点表記は自動計算せず、同じ年は章・シーンの順番で並べます。
-          </p>
-          {!scenes.length && (
-            <p>
-              シーンを作成し、世界の事件や細かな時点を設定すると、ここで全体を確認できます。
-            </p>
-          )}
-          {orderedCreationScenes(data, projectId, chronological).map((item) => (
-            <button
-              key={item.id}
-              className="creation-timeline-scene"
-              onClick={() => {
-                setSceneId(item.id);
-                setColumnId(item.columnId);
-                setTab("scenes");
+          {timelineView === "graph" && (
+            <SceneTimelineGraph
+              data={data}
+              projectId={projectId}
+              onScene={(id) => {
+                const item = scenes.find((s) => s.id === id);
+                if (item) {
+                  setSceneId(id);
+                  setColumnId(item.columnId);
+                  setDetailRequested(true);
+                  setTab("scenes");
+                }
               }}
-            >
-              <small>
-                {columns.find((column) => column.id === item.columnId)?.name ||
-                  "未分類"}{" "}
-                · {item.status}
-              </small>
-              <strong>{item.name}</strong>
-              <span>
-                {item.year === undefined ? "年代未定" : `${item.year}年`}
-                {item.timeText ? ` · ${item.timeText}` : ""}
-              </span>
-              <small>
-                世界の出来事：{names(item.eventId)} ／ 舞台：
-                {names(item.placeId)}
-              </small>
-              <small>
-                登場人物：
-                {sceneCast(item, data.entries)
-                  .map((id) => names(id))
-                  .join("、") || "未設定"}
-              </small>
-            </button>
-          ))}
+              onEvent={onOpen}
+            />
+          )}
+          {timelineView === "list" && (
+            <>
+              <div className="creation-inline-actions">
+                <button
+                  className="button subtle"
+                  aria-pressed={!chronological}
+                  onClick={() => setChronological(false)}
+                >
+                  章・シーンの順番
+                </button>
+                <button
+                  className="button subtle"
+                  aria-pressed={chronological}
+                  onClick={() => setChronological(true)}
+                >
+                  共通年の順番
+                </button>
+              </div>
+              <p className="muted">
+                共通年の順番では年代未定を最後に表示します。「翌朝」などの自由な時点表記は自動計算せず、同じ年は章・シーンの順番で並べます。
+              </p>
+              {!scenes.length && (
+                <p>
+                  シーンを作成し、世界の事件や細かな時点を設定すると、ここで全体を確認できます。
+                </p>
+              )}
+              {orderedCreationScenes(data, projectId, chronological).map(
+                (item) => (
+                  <button
+                    key={item.id}
+                    className="creation-timeline-scene"
+                    onClick={() => {
+                      setSceneId(item.id);
+                      setColumnId(item.columnId);
+                      setDetailRequested(true);
+                      setTab("scenes");
+                    }}
+                  >
+                    <small>
+                      {columns.find((column) => column.id === item.columnId)
+                        ?.name || "未分類"}{" "}
+                      · {item.status}
+                    </small>
+                    <strong>{item.name}</strong>
+                    <span>
+                      {item.year === undefined ? "年代未定" : `${item.year}年`}
+                      {item.timeText ? ` · ${item.timeText}` : ""}
+                    </span>
+                    <small>
+                      世界の出来事：{names(item.eventId)} ／ 舞台：
+                      {names(item.placeId)}
+                    </small>
+                    <small>
+                      登場人物：
+                      {sceneCast(item, data.entries)
+                        .map((id) => names(id))
+                        .join("、") || "未設定"}
+                    </small>
+                  </button>
+                ),
+              )}
+            </>
+          )}
         </section>
       )}
       {tab === "references" && (
-        <div className="creation-layout">
+        <EditorSplit
+          mode={data.appearance?.mobileEditor}
+          selection={referenceId}
+          label="資料"
+          initialDetail={Boolean(initialSceneId)}
+        >
           <aside className="panel creation-index">
             <h2>使える設定資料</h2>
             <SettingGenrePicker
@@ -1080,7 +1142,7 @@ function StoryMaker({
               </p>
             </div>
           )}
-        </div>
+        </EditorSplit>
       )}
       {quick && scene && (
         <QuickSetting
@@ -1408,7 +1470,11 @@ function WorldBuilder({
           </button>
         </div>
       </header>
-      <div className="creation-layout">
+      <EditorSplit
+        mode={data.appearance?.mobileEditor}
+        selection={selectedId}
+        label="設定"
+      >
         <aside className="panel creation-index">
           <SettingGenrePicker
             entries={entries}
@@ -1661,7 +1727,7 @@ function WorldBuilder({
             </p>
           </div>
         )}
-      </div>
+      </EditorSplit>
     </section>
   );
 }

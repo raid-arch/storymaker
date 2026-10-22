@@ -1,3 +1,4 @@
+import { defaultAppearance } from "../src/appearance";
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { emptyData, newEntry, newProject } from "../src/model";
@@ -39,6 +40,7 @@ async function workspace(page: Page) {
 }
 test.beforeEach(async ({ page }) => {
   const data = emptyData();
+  data.appearance={...defaultAppearance(),mobileEditor:"inline"};
   data.projects = [
     { ...newProject(), id: "a", name: "第一の物語", worldIds: ["w"] },
     { ...newProject("world"), id: "w", name: "共通世界資料" },
@@ -155,6 +157,7 @@ test("write a chapter and scene, connect world context, and retain scene-specifi
   await page
     .getByRole("button", { name: "シーンの時間軸", exact: true })
     .click();
+  await page.getByRole("button",{name:"一覧",exact:true}).click();
   await expect(page.locator(".creation-timeline-scene")).toHaveCount(2);
   await expect(page.locator(".creation-timeline-scene").first()).toContainText(
     "世界全体の大戦争",

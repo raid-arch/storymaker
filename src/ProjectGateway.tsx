@@ -1,3 +1,4 @@
+import CardSurface, { CardMenuButton } from "./CardSurface";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -26,6 +27,8 @@ export default function ProjectGateway({
   onCreate,
   onSettings,
   saveState,
+  onActions,
+  onTrash,
 }: {
   data: Data;
   screen: "home" | "picker";
@@ -35,6 +38,8 @@ export default function ProjectGateway({
   onCreate: (kind: "world" | "story", parentId?: string) => void;
   onSettings: () => void;
   saveState: string;
+  onActions: (id: string) => void;
+  onTrash: () => void;
 }) {
   const [query, setQuery] = useState("");
   const worlds = data.projects.filter(isWorldLibrary);
@@ -46,25 +51,34 @@ export default function ProjectGateway({
   const stories = (id: string) => workspaceStories(data, id);
   function storyCard(p: Project) {
     return (
-      <button
-        className="gateway-story"
-        style={{
-          paddingLeft: `${12 + Math.min(workspaceStoryDepth(data, p), 5) * 16}px`,
-        }}
+      <CardSurface
+        className="gateway-story-wrap"
         key={p.id}
-        onClick={() => onOpen(p.id)}
+        onActions={() => onActions(p.id)}
       >
-        <BookOpen size={19} />
-        <span>
-          <strong>{p.name || "名前未設定"}</strong>
-          <small>
-            {p.type === "シリーズ" ? "シリーズ" : "物語"} ·{" "}
-            {data.entries.filter((e) => e.projectId === p.id).length}
-            件の専用設定
-          </small>
-        </span>
-        <ArrowRight size={17} />
-      </button>
+        <button
+          className="gateway-story"
+          style={{
+            paddingLeft: `${12 + Math.min(workspaceStoryDepth(data, p), 5) * 16}px`,
+          }}
+          onClick={() => onOpen(p.id)}
+        >
+          <BookOpen size={19} />
+          <span>
+            <strong>{p.name || "名前未設定"}</strong>
+            <small>
+              {p.type === "シリーズ" ? "シリーズ" : "物語"} ·{" "}
+              {data.entries.filter((e) => e.projectId === p.id).length}
+              件の専用設定
+            </small>
+          </span>
+          <ArrowRight size={17} />
+        </button>
+        <CardMenuButton
+          name={p.name || "名前未設定"}
+          onClick={() => onActions(p.id)}
+        />
+      </CardSurface>
     );
   }
   return (
@@ -173,7 +187,15 @@ export default function ProjectGateway({
                 (world) => matches(world) || stories(world.id).some(matches),
               )
               .map((world) => (
-                <section className="gateway-world" key={world.id}>
+                <CardSurface
+                  className="gateway-world"
+                  key={world.id}
+                  onActions={() => onActions(world.id)}
+                >
+                  <CardMenuButton
+                    name={world.name || "名前未設定"}
+                    onClick={() => onActions(world.id)}
+                  />
                   <header>
                     <Globe2 size={25} />
                     <div>
@@ -209,7 +231,7 @@ export default function ProjectGateway({
                       この世界に物語を作る
                     </button>
                   </div>
-                </section>
+                </CardSurface>
               ))}
             {data.projects
               .filter(
@@ -242,6 +264,9 @@ export default function ProjectGateway({
       )}
       <footer className="gateway-footer">
         <span>データはこの端末に保存されます</span>
+        <button className="text-button" onClick={onTrash}>
+          ゴミ箱（{data.trash?.length || 0}）
+        </button>
         {!isAndroidApp && (
           <a
             className="text-button"

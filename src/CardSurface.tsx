@@ -73,6 +73,11 @@ export default function CardSurface({
     cancel();
     suppressClick.current = false;
     if (
+      (event.target as HTMLElement).closest("[data-card-surface]") !==
+      event.currentTarget
+    )
+      return;
+    if (
       !event.isPrimary ||
       event.button !== 0 ||
       event.pointerType === "mouse" ||
@@ -101,6 +106,12 @@ export default function CardSurface({
       }}
       onPointerLeave={cancel}
       onContextMenu={(event) => {
+        if (
+          (event.target as HTMLElement).closest("[data-card-surface]") !==
+          event.currentTarget
+        )
+          return;
+        event.stopPropagation();
         event.preventDefault();
         show();
       }}

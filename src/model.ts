@@ -1,3 +1,5 @@
+import { validTrash } from "./trashModel";
+import type { TrashItem } from "./trashModel";
 import { validAppearance } from "./appearance";
 import type { Appearance } from "./appearance";
 import { cleanStudio, validateStudio } from "./studio/model";
@@ -89,6 +91,7 @@ export interface Relation {
   validTo?: number;
 }
 export interface Data {
+  trash?: TrashItem[];
   studio?: Studio;
   appearance?: Appearance;
   version: 1;
@@ -406,6 +409,7 @@ export function validateBackup(raw: unknown): Data {
   if (!raw || typeof raw !== "object") return fail();
   const d = raw as Data;
   if (
+    (d.trash !== undefined && !validTrash(d.trash)) ||
     (d.appearance !== undefined && !validAppearance(d.appearance)) ||
     d.version !== 1 ||
     !Array.isArray(d.projects) ||

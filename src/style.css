@@ -5037,3 +5037,55 @@ kbd {
 .main-nav details > button small { margin-left:auto; color:var(--faint); font-size:calc(10px * var(--text-scale,1)); }
 .main-nav details > button:hover { background:var(--panel-hover); color:var(--text); }
 .main-nav details > button.active { background:var(--green-dim); color:var(--green); }
+.gateway-world,.gateway-story-wrap { position:relative; }
+.gateway-world > .card-menu-button { top:12px; right:12px; z-index:2; }
+.gateway-world > header { padding-top:48px; }
+.gateway-story-wrap > .gateway-story { padding-right:48px; }
+.gateway-story-wrap > .card-menu-button { top:50%; transform:translateY(-50%); right:0; }
+.trash-panel { overflow-wrap:anywhere; }
+.trash-panel > h2 { color:var(--heading); padding-right:40px; }
+.trash-panel > p { line-height:1.9; font-size:13px; }
+.trash-close { position:absolute; top:16px; right:16px; }
+.trash-empty { padding:40px 0; text-align:center; }
+.trash-items { display:grid; gap:12px; margin-top:24px; }
+.trash-items article { border:1px solid var(--line); border-radius:10px; padding:20px; display:flex; flex-wrap:wrap; align-items:center; gap:18px; }
+.trash-items article > div:first-child { flex:1; min-width:140px; }
+.trash-items strong { color:var(--heading); font-weight:500; }
+.trash-items small { display:block; font-size:11px; color:var(--muted); margin-top:10px; line-height:1.8; }
+.trash-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.trash-actions .danger { color:#d48282; }
+@media(max-width:720px) { .gateway-world > header { padding-top:48px; } .trash-items article { padding:16px; } .trash-actions { width:100%; } .trash-actions > button { flex:1; } }
+.editor-list-pane,.editor-detail-pane { min-width:0; }
+.editor-list-back { display:none; }
+.mobile-editor-preferences { border-bottom:1px solid var(--line); padding-bottom:24px; margin-bottom:24px; }
+.mobile-editor-preferences h3 { color:var(--heading); }
+.mobile-editor-preferences p { font-size:12px; line-height:1.8; color:var(--muted); }
+@media(max-width:720px) {
+ .split-pages.split-list > .editor-detail-pane,.split-pages.split-detail > .editor-list-pane { display:none; }
+ .split-pages.split-detail .editor-list-back { display:flex; margin-bottom:18px; }
+ .split-pages { grid-template-columns:minmax(0,1fr); }
+ .split-pages .creation-index { max-height:none; }
+}
+.scene-time-graph { border:1px solid var(--line); border-radius:10px; padding:20px; margin:24px 0; }
+.scene-time-graph h3 { color:var(--heading); }
+.time-graph-heading,.time-graph-row { display:grid; grid-template-columns:70px minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.time-graph-heading { font-size:12px; padding:16px 0; color:var(--muted); }
+.time-graph-row { min-height:110px; border-top:1px solid var(--line); }
+.time-graph-year { position:relative; border-right:2px solid var(--green); padding:22px 8px 20px 0; font-size:12px; color:var(--green); overflow-wrap:anywhere; }
+.time-graph-year:after { content:""; position:absolute; right:-5px; top:27px; height:8px; width:8px; border-radius:50%; background:var(--green); }
+.time-graph-row > div:not(:first-child) { display:grid; align-content:start; gap:8px; padding:16px 0; }
+.time-graph-row button { text-align:left; border:1px solid var(--line); border-left:3px solid var(--green); border-radius:7px; background:var(--panel); padding:12px; overflow-wrap:anywhere; min-width:0; }
+.time-graph-row > div:last-child button { border-left-color:var(--muted); }
+.time-graph-row button strong,.time-graph-row button span,.time-graph-row button small { display:block; line-height:1.7; }
+.time-graph-row button strong { color:var(--heading); font-size:13px; }
+.time-graph-row button small,.time-graph-row button span { font-size:11px; color:var(--muted); }
+.time-unknown .time-graph-year { border-right-style:dashed; }
+.time-graph-empty { color:var(--muted); line-height:1.9; font-size:13px; }
+@media(max-width:720px) {
+ .scene-time-graph { padding:12px; margin-inline:-8px; }
+ .time-graph-heading,.time-graph-row { grid-template-columns:42px minmax(0,1fr) minmax(0,1fr); gap:8px; }
+ .time-graph-row button { padding:8px; }
+ .time-graph-heading { font-size:10px; }
+ .time-graph-year { font-size:10px; }
+}
+.editor-list-pane,.editor-detail-pane { scroll-margin-top:100px; }

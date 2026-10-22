@@ -7,6 +7,7 @@ export const dashboardSections = [
 ] as const;
 export type DashboardSection = (typeof dashboardSections)[number]["id"];
 export interface Appearance {
+  mobileEditor?: "pages" | "inline";
   accent: "sage" | "blue" | "lavender" | "amber" | "rose" | "teal" | "silver";
   fontSize: "small" | "medium" | "large";
   font: "sans" | "serif";
@@ -18,6 +19,7 @@ export interface Appearance {
 }
 export function defaultAppearance(): Appearance {
   return {
+    mobileEditor: "pages",
     background: "plain",
     surface: "classic",
     accent: "sage",
@@ -32,6 +34,7 @@ export function validAppearance(value: unknown): value is Appearance {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const a = value as Appearance;
   return (
+    (a.mobileEditor === undefined || ["pages", "inline"].includes(a.mobileEditor)) &&
     ["sage", "blue", "lavender", "amber", "rose", "teal", "silver"].includes(a.accent) &&
     (a.background === undefined || ["plain", "glow", "paper", "grid"].includes(a.background)) &&
     (a.surface === undefined || ["classic", "soft", "outlined"].includes(a.surface)) &&
