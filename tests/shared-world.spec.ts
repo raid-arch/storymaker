@@ -5,7 +5,7 @@ test("shared setting opens inside its story and sibling settings remain separate
 }) => {
   const data = emptyData();
   data.projects = [
-    { ...newProject(), id: "world", name: "共通世界", type: "世界観" },
+    { ...newProject("world"), id: "world", name: "共通世界", type: "世界観" },
     { ...newProject(), id: "a", parentId: "world", name: "物語A" },
     { ...newProject(), id: "b", parentId: "world", name: "物語B" },
   ];
@@ -21,11 +21,16 @@ test("shared setting opens inside its story and sibling settings remain separate
     request.onsuccess = () => request.result.close();
   }, data);
   await page.goto("./");
+  await page.locator(".main-nav").waitFor({ state: "attached" });
+  if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
+    await page.getByRole("button", { name: "メニューを開く" }).click();
+  await page.locator(".project-switch").click();
   await page
-    .getByRole("button", { name: "物語Aをひらく", exact: true })
+    .locator(".project-menu")
+    .getByRole("button", { name: "物語A", exact: true })
     .click();
-  const scope = page.getByRole("region", { name: "世界観と物語" });
-  await expect(scope).toContainText("共通設定：1件");
+  const scope = page.getByRole("region", { name: "ストーリーと参照資料" });
+  await expect(scope).toContainText("参照資料の設定：1件");
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
     await page.getByRole("button", { name: "メニューを開く" }).click();
   await page
@@ -44,8 +49,13 @@ test("shared setting opens inside its story and sibling settings remain separate
   await page.getByRole("button", { name: "一覧へ戻る", exact: true }).click();
   await expect(page.locator(".entry-card")).toHaveCount(2);
   await page.reload();
+  await page.locator(".main-nav").waitFor({ state: "attached" });
+  if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
+    await page.getByRole("button", { name: "メニューを開く" }).click();
+  await page.locator(".project-switch").click();
   await page
-    .getByRole("button", { name: "物語Bをひらく", exact: true })
+    .locator(".project-menu")
+    .getByRole("button", { name: "物語B", exact: true })
     .click();
   if (await page.getByRole("button", { name: "メニューを開く" }).isVisible())
     await page.getByRole("button", { name: "メニューを開く" }).click();

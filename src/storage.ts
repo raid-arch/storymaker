@@ -1,5 +1,5 @@
 import { openDB } from "idb";
-import { emptyData, validateBackup } from "./model";
+import { emptyData, validateBackup, organizeStories } from "./model";
 import type { Data } from "./model";
 const database = () =>
   openDB("tsuzuriniwa", 1, {
@@ -10,7 +10,15 @@ const database = () =>
 export async function load(): Promise<Data> {
   const db = await database();
   const saved = await db.get("state", "main");
-  if (saved) return validateBackup(saved);
+  if (saved) {
+    const valid = validateBackup(saved);
+    if (
+      valid.projects.some((p) => p.parentId) &&
+      !(await db.get("state", "organization-before-references"))
+    )
+      await db.put("state", saved, "organization-before-references");
+    return organizeStories(valid);
+  }
   const initial = emptyData();
   await db.put("state", initial, "main");
   return initial;

@@ -4543,3 +4543,26 @@ kbd {
 .checkbox-label > input[type="checkbox"] { width:20px; height:20px; min-height:20px; flex:0 0 20px; }
 
 @media(max-width:720px){ .map-canvas .map-marker-hit { r:62px; } .map-canvas .map-marker-dot { r:14px; } .map-canvas text { font-size:32px; } }
+
+/* Independent story workspaces and reusable reference libraries. */
+.workspace-context { padding: 1rem; margin-bottom: 1.2rem; display: grid; gap: .7rem; }
+.workspace-context p { margin: 0; overflow-wrap: anywhere; }
+.workspace-context .button { justify-self: start; }
+.library-tabs { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
+.library-tabs [aria-pressed="true"] { border-color: var(--green); background: var(--green-dim); }
+.world-reference-picker { min-width: 0; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 1rem; }
+.world-reference-picker label { display: flex; align-items: center; gap: .7rem; padding: .6rem 0; }
+.world-reference-picker input[type="checkbox"] { width: 20px; height: 20px; flex: 0 0 20px; }
+.timeline-controls { padding: 1rem; margin-bottom: 1.5rem; }
+.timeline-filter-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(145px,1fr)); gap: .7rem; margin: 1rem 0; }
+.timeline-filter-grid label { display: grid; gap: .4rem; min-width: 0; }
+.timeline-filter-grid input, .timeline-filter-grid select { width: 100%; min-width: 0; }
+.timeline-group { min-width: 0; }
+.timeline-group-heading { padding: .5rem 0; margin: .5rem 0; font-size: 1rem; }
+.timeline-story-actions { display: flex; flex-wrap: wrap; gap: .5rem; padding: .5rem 0 .8rem; }
+.timeline-story-actions .button { white-space: normal; }
+@media (max-width: 600px) { .timeline-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+.timeline-group .timeline-card-wrap { flex: 1; margin-bottom: 1rem; }
+.timeline-group .timeline-card-wrap .timeline-card { height: auto; margin-bottom: 0; }
+.timeline-group .timeline-card-wrap > .card-menu-button { top: 8px; bottom: auto; }
+.timeline-group .timeline-card > div:first-child { padding-right: 2rem; }

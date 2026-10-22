@@ -59,7 +59,7 @@ test("categories, project types, clue progress, and relationships accept new nam
 }) => {
   await page.goto("./");
   await page
-    .getByRole("button", { name: "プロジェクトを編集", exact: true })
+    .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();
   await page.getByLabel("種類", { exact: true }).fill("設定資料集");
   await page.getByLabel("設定の状態", { exact: true }).fill("構想の断片");
@@ -94,7 +94,7 @@ test("categories, project types, clue progress, and relationships accept new nam
   await saved(page);
   await page.reload();
   await page
-    .getByRole("button", { name: "プロジェクトを編集", exact: true })
+    .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();
   await expect(page.getByLabel("種類", { exact: true })).toHaveValue(
     "設定資料集",

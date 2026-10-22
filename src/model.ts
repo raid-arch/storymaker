@@ -34,6 +34,9 @@ export interface Project {
   truth: string;
   type: string;
   parentId: string;
+  workspaceKind?: "story" | "world";
+  worldIds?: string[];
+  eventOrder?: string[];
   updatedAt: string;
 }
 export interface Entry {
@@ -123,7 +126,9 @@ export function fieldOptions(
 }
 export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
-export function newProject(): Project {
+export function newProject(
+  workspaceKind: "story" | "world" = "story",
+): Project {
   return {
     id: uid(),
     name: "",
@@ -133,22 +138,66 @@ export function newProject(): Project {
     status: "仮設定",
     lore: "",
     truth: "",
-    type: "作品",
+    type: workspaceKind === "world" ? "世界観" : "作品",
+    workspaceKind,
+    worldIds: [],
     parentId: "",
     updatedAt: now(),
   };
 }
-/** Current project plus its ancestors; siblings and descendants stay private. */
+export function isWorldLibrary(project: Project): boolean {
+  return (
+    project.workspaceKind === "world" ||
+    (project.workspaceKind === undefined && project.type === "世界観")
+  );
+}
+/** Explicit references replace hierarchy. Legacy ancestors remain readable until migration. */
 export function sharedProjectIds(data: Data, projectId: string): Set<string> {
   const ids = new Set<string>();
-  let id = projectId;
-  while (id && !ids.has(id)) {
+  const visit = (id: string) => {
     const project = data.projects.find((item) => item.id === id);
-    if (!project) break;
+    if (!project || ids.has(id)) return;
     ids.add(id);
-    id = project.parentId;
-  }
+    if (project.worldIds !== undefined) project.worldIds.forEach(visit);
+    if (project.parentId) visit(project.parentId);
+  };
+  visit(projectId);
   return ids;
+}
+export function referencedWorldIds(data: Data, project: Project): string[] {
+  return project.parentId || project.worldIds === undefined
+    ? [...sharedProjectIds(data, project.id)].filter((id) => id !== project.id)
+    : project.worldIds;
+}
+/** Idempotent: preserve IDs, settings and old sharing while removing parent/child navigation. */
+export function organizeStories(data: Data): Data {
+  return {
+    ...data,
+    projects: data.projects.map((project) => ({
+      ...project,
+      workspaceKind: isWorldLibrary(project) ? "world" : "story",
+      worldIds: [...new Set(referencedWorldIds(data, project))],
+      parentId: "",
+    })),
+  };
+}
+export function narrativeEvents(data: Data, projectId: string): Entry[] {
+  const project = data.projects.find((p) => p.id === projectId);
+  const scope = sharedProjectIds(data, projectId);
+  const events = data.entries.filter(
+    (entry) => entry.kind === "event" && scope.has(entry.projectId),
+  );
+  const ids = [
+    ...new Set([
+      ...(project?.eventOrder || []),
+      ...events
+        .filter((entry) => entry.projectId === projectId)
+        .map((entry) => entry.id),
+    ]),
+  ];
+  return ids
+    .map((id) => events.find((entry) => entry.id === id))
+    .filter((entry): entry is Entry => Boolean(entry));
 }
 export function newEntry(projectId: string, kind: Kind): Entry {
   return {
@@ -191,6 +240,10 @@ export function deleteEntry(data: Data, id: string): Data {
   return cleanStudio(
     {
       ...data,
+      projects: data.projects.map((p) => ({
+        ...p,
+        eventOrder: p.eventOrder?.filter((eventId) => eventId !== id),
+      })),
       entries: data.entries
         .filter((e) => e.id !== id)
         .map((e) => ({ ...e, links: e.links.filter((l) => l !== id) })),
@@ -217,11 +270,20 @@ export function deleteProject(data: Data, id: string): Data {
   return cleanStudio(
     {
       ...data,
-      projects: data.projects.filter((p) => !ids.has(p.id)),
+      projects: data.projects
+        .filter((p) => !ids.has(p.id))
+        .map((p) => ({
+          ...p,
+          worldIds: p.worldIds?.filter((source) => !ids.has(source)),
+          eventOrder: p.eventOrder?.filter((eventId) => !removed.has(eventId)),
+        })),
       entries: data.entries
         .filter((e) => !removed.has(e.id))
         .map((e) => ({ ...e, links: e.links.filter((l) => !removed.has(l)) })),
-      relations: data.relations.filter((r) => !ids.has(r.projectId)),
+      relations: data.relations.filter(
+        (r) =>
+          !ids.has(r.projectId) && !removed.has(r.from) && !removed.has(r.to),
+      ),
       positions: Object.fromEntries(
         Object.entries(data.positions).filter(([key]) => !removed.has(key)),
       ),
@@ -263,13 +325,15 @@ export function searchEntries(entries: Entry[], q: string): Entry[] {
   );
 }
 export function sortEvents(entries: Entry[]): Entry[] {
+  const number = (value: string | undefined) =>
+    value?.trim() && Number.isFinite(Number(value)) ? Number(value) : Infinity;
   return [...entries].sort((a, b) => {
-    const aYear = a.fields.年代?.trim(),
-      bYear = b.fields.年代?.trim();
-    return (
-      (aYear ? Number(aYear) : Infinity) - (bYear ? Number(bYear) : Infinity) ||
-      a.name.localeCompare(b.name, "ja")
-    );
+    for (const key of ["年代", "月", "日"]) {
+      const left = number(a.fields[key]),
+        right = number(b.fields[key]);
+      if (left !== right) return left < right ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name, "ja");
   });
 }
 export function familyGenerations(
@@ -356,6 +420,10 @@ export function validateBackup(raw: unknown): Data {
       !list(p.tags) ||
       !status(p.status) ||
       !str(p.type) ||
+      (p.workspaceKind !== undefined &&
+        !["story", "world"].includes(p.workspaceKind)) ||
+      (p.worldIds !== undefined && !list(p.worldIds)) ||
+      (p.eventOrder !== undefined && !list(p.eventOrder)) ||
       !p.id ||
       ids.has(p.id)
     )
@@ -364,6 +432,27 @@ export function validateBackup(raw: unknown): Data {
   }
   for (const p of d.projects) {
     if (p.parentId && !ids.has(p.parentId)) return fail();
+    if (p.worldIds?.some((id) => !ids.has(id) || id === p.id)) return fail();
+    const visiting = new Set<string>(),
+      complete = new Set<string>();
+    const visit = (id: string): boolean => {
+      if (visiting.has(id)) return false;
+      if (complete.has(id)) return true;
+      visiting.add(id);
+      const item = d.projects.find((source) => source.id === id);
+      if (!item) return false;
+      if (
+        ![
+          ...(item.worldIds || []),
+          ...(item.parentId ? [item.parentId] : []),
+        ].every(visit)
+      )
+        return false;
+      visiting.delete(id);
+      complete.add(id);
+      return true;
+    };
+    if (!visit(p.id)) return fail();
     const seen = new Set([p.id]);
     let parent = p.parentId;
     while (parent) {

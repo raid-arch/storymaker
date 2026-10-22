@@ -78,25 +78,25 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   ).toHaveCount(1);
   expect(errors).toEqual([]);
 });
-test("project creation, hierarchy, edit, persist, and safe sample addition", async ({
+test("story creation, independent stories, edit and persistence", async ({
   page,
 }) => {
   await page.goto("./");
   await switcher(page);
   await page
-    .getByRole("button", { name: "新規プロジェクト", exact: true })
+    .getByRole("button", { name: "新規ストーリー", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("月の図書館");
   await page.getByLabel("種類", { exact: true }).fill("シリーズ");
   await page.getByLabel("説明", { exact: true }).fill("新しい物語の記録");
   await page
-    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "月の図書館", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "プロジェクトを編集", exact: true })
+    .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();
   await page.getByLabel("説明", { exact: true }).fill("変更を保存しました");
   await page.getByRole("button", { name: "完了", exact: true }).click();
@@ -109,15 +109,13 @@ test("project creation, hierarchy, edit, persist, and safe sample addition", asy
   );
   await switcher(page);
   await page
-    .getByRole("button", { name: "新規プロジェクト", exact: true })
+    .getByRole("button", { name: "新規ストーリー", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("第一章");
   await page.getByLabel("種類", { exact: true }).fill("章");
+  await expect(page.getByLabel("上位ストーリー")).toHaveCount(0);
   await page
-    .getByLabel("上位プロジェクト")
-    .selectOption({ label: "月の図書館" });
-  await page
-    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
   await saved(page);
   await expect(
@@ -186,7 +184,13 @@ test("family relationships, cycle rejection, dragging and navigation", async ({
   const person = page.locator(".graph-person").filter({ hasText: "人物A" });
   const before = await person.getAttribute("style");
   // Center the node away from the sticky toolbar before sending raw pointer coordinates.
-  await person.evaluate(el=>el.scrollIntoView({block:"center",inline:"nearest",behavior:"instant"}));
+  await person.evaluate((el) =>
+    el.scrollIntoView({
+      block: "center",
+      inline: "nearest",
+      behavior: "instant",
+    }),
+  );
   const box = (await person.boundingBox())!;
   await page.mouse.move(box.x + 30, box.y + 30);
   await page.mouse.down();
@@ -261,7 +265,7 @@ test("backup download, invalid backup protection, restore and Markdown export", 
   await page
     .locator('input[type=file][accept=".json,application/json"]')
     .setInputFiles(path!);
-  await expect(page.getByRole("dialog")).toContainText("1 プロジェクト・10 件");
+  await expect(page.getByRole("dialog")).toContainText("1 ストーリー・10 件");
   await page.getByRole("button", { name: "全データを置き換えて復元" }).click();
   await expect(
     page.getByRole("heading", { name: "検証用の物語", exact: true }),
@@ -322,7 +326,7 @@ test("image persistence, light mode and project deletion undo", async ({
 }) => {
   await page.goto("./");
   await page
-    .getByRole("button", { name: "プロジェクトを編集", exact: true })
+    .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();
   await page
     .locator(".image-input input[type=file]")
@@ -341,16 +345,16 @@ test("image persistence, light mode and project deletion undo", async ({
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await switcher(page);
   await page
-    .getByRole("button", { name: "新規プロジェクト", exact: true })
+    .getByRole("button", { name: "新規ストーリー", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("削除確認用の作品");
   await page
-    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
   await saved(page);
   await switcher(page);
   await page
-    .getByRole("button", { name: "プロジェクトを管理", exact: true })
+    .getByRole("button", { name: "ストーリーを管理", exact: true })
     .click();
   await expect(page.locator(".project-card")).toHaveCount(2);
   await expect(

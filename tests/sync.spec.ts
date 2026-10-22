@@ -120,7 +120,7 @@ test("private cloud sync uploads, persists connection, pulls safely, and stops o
     "PCから届いた新しい説明",
   );
   await page
-    .getByRole("button", { name: "プロジェクトを編集", exact: true })
+    .getByRole("button", { name: "ストーリーを編集", exact: true })
     .click();
   await page.getByLabel("説明", { exact: true }).fill("スマホで別の変更");
   await page.getByRole("button", { name: "完了", exact: true }).click();

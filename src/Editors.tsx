@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import {
   sharedProjectIds,
-  descendants,
+  isWorldLibrary,
+  referencedWorldIds,
   kindLabels,
   statusOptions,
   categoryOptions,
@@ -146,7 +147,8 @@ export function ProjectForm({
   onError: (s: string) => void;
   isNew?: boolean;
 }) {
-  const excluded = descendants(data, value.id);
+  const world = isWorldLibrary(value);
+  const sources = referencedWorldIds(data, value);
   return (
     <form
       onSubmit={(e) => {
@@ -158,7 +160,15 @@ export function ProjectForm({
       <div className="modal-heading">
         <div>
           <span className="eyebrow">YOUR NEXT STORY</span>
-          <h2>{isNew ? "新しい物語をはじめる" : "プロジェクト設定"}</h2>
+          <h2>
+            {isNew
+              ? world
+                ? "世界観を作成"
+                : "新しいストーリー"
+              : world
+                ? "世界観の設定"
+                : "ストーリーの設定"}
+          </h2>
         </div>
         <button
           type="button"
@@ -170,7 +180,8 @@ export function ProjectForm({
         </button>
       </div>
       <label>
-        作品名 <span className="required">必須</span>
+        {world ? "世界観の名前" : "作品名"}{" "}
+        <span className="required">必須</span>
         <input
           autoFocus
           required
@@ -187,7 +198,6 @@ export function ProjectForm({
             value={value.type}
             onChange={(type) => onChange({ ...value, type })}
             suggestions={uniqueOptions([
-              "世界観",
               "シリーズ",
               "作品",
               "章",
@@ -196,27 +206,46 @@ export function ProjectForm({
             placeholder="例：作品、設定集、短編集"
           />
         </label>
-        <label>
-          上位プロジェクト
-          <select
-            aria-label="上位プロジェクト"
-            value={value.parentId}
-            onChange={(e) => onChange({ ...value, parentId: e.target.value })}
-          >
-            <option value="">なし（最上位）</option>
-            {data.projects
-              .filter((p) => !excluded.has(p.id))
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-          </select>
-        </label>
       </div>
-      <p className="muted">
-        上位の設定を共通で表示します。同じ世界の物語は、同じ上位プロジェクトを選んでください。
-      </p>
+      {!world && (
+        <fieldset className="world-reference-picker">
+          <legend>参照する世界観</legend>
+          <p>
+            事前に作った設定資料を選びます。親子関係ではなく、複数のストーリーから同じ世界観を参照できます。
+          </p>
+          {data.projects
+            .filter(
+              (p) =>
+                p.id !== value.id &&
+                !sharedProjectIds(data, p.id).has(value.id) &&
+                (isWorldLibrary(p) || sources.includes(p.id)),
+            )
+            .map((p) => (
+              <label key={p.id}>
+                <input
+                  type="checkbox"
+                  checked={sources.includes(p.id)}
+                  onChange={(event) =>
+                    onChange({
+                      ...value,
+                      parentId: "",
+                      worldIds: event.target.checked
+                        ? [...sources, p.id]
+                        : sources.filter((id) => id !== p.id),
+                    })
+                  }
+                />
+                {p.name}
+                {!isWorldLibrary(p) && "（以前の共有元）"}
+              </label>
+            ))}
+          {!data.projects.some(isWorldLibrary) && (
+            <p className="muted">
+              世界観ライブラリで資料を作成すると、ここから選べます。参照なしでも執筆できます。
+            </p>
+          )}
+        </fieldset>
+      )}
       <label>
         説明
         <textarea
@@ -272,7 +301,7 @@ export function ProjectForm({
           {isNew ? "作成後の設定は自動保存されます" : "変更は自動保存されます"}
         </span>
         <button className="button primary" type="submit">
-          {isNew ? "プロジェクトを作成" : "完了"}
+          {isNew ? (world ? "世界観を作成" : "ストーリーを作成") : "完了"}
         </button>
       </div>
     </form>
@@ -349,9 +378,9 @@ export function EntryEditor({
         style={{ padding: "1rem", marginBottom: "1rem" }}
       >
         <label>
-          設定の保存先（共有範囲）
+          設定の保存先（ストーリー／世界観）
           <select
-            aria-label="設定の保存先（共有範囲）"
+            aria-label="設定の保存先（ストーリー／世界観）"
             value={entry.projectId}
             onChange={(event) =>
               onChange({ ...entry, projectId: event.target.value })
@@ -367,7 +396,7 @@ export function EntryEditor({
           </select>
         </label>
         <p>
-          保存先と、その下にある物語で共有されます。共通設定にしたい場合は上位の世界観を選んでください。編集内容は共有先にも反映されます。
+          ストーリーに保存すると専用設定になります。参照中の世界観に保存すると、その資料を使うストーリーにも編集内容が反映されます。
         </p>
       </section>
       <div className="editor-layout">
@@ -545,6 +574,37 @@ export function EntryEditor({
                     value={entry.fields.年代 || ""}
                     onChange={(e) => field("年代", e.target.value)}
                     placeholder="空欄は年代未確定"
+                  />
+                </label>
+                <label>
+                  月（任意）
+                  <input
+                    aria-label="月（任意）"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={entry.fields.月 || ""}
+                    onChange={(e) => field("月", e.target.value)}
+                  />
+                </label>
+                <label>
+                  日（任意）
+                  <input
+                    aria-label="日（任意）"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={entry.fields.日 || ""}
+                    onChange={(e) => field("日", e.target.value)}
+                  />
+                </label>
+                <label>
+                  年代表記・暦名
+                  <input
+                    aria-label="年代表記・暦名"
+                    placeholder="例：王暦102年、建国前3年"
+                    value={entry.fields.年代表記 || ""}
+                    onChange={(e) => field("年代表記", e.target.value)}
                   />
                 </label>
                 <label>

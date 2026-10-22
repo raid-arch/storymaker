@@ -1,4 +1,4 @@
-import { sharedProjectIds } from "../model";
+import { sharedProjectIds, organizeStories, validateBackup } from "../model";
 import type { Data, Entry, Kind, Project } from "../model";
 
 export interface Asset {
@@ -699,7 +699,7 @@ export function restoreRevision(data: Data, revision: Revision): Data {
   if (revision.target === "entry") {
     const entry = snapshot as Entry;
     if (!data.projects.some((project) => project.id === entry.projectId))
-      throw new Error("先に所属プロジェクトを復元してください。");
+      throw new Error("先に保存先のストーリー・世界観を復元してください。");
     entry.links = entry.links.filter((id) =>
       data.entries.some((item) => item.id === id),
     );
@@ -729,5 +729,19 @@ export function restoreRevision(data: Data, revision: Revision): Data {
     ancestor =
       result.projects.find((item) => item.id === ancestor)?.parentId || "";
   }
-  return { ...result, projects: putItem(result.projects, project) };
+  project.worldIds = project.worldIds?.filter(
+    (id) => id !== project.id && result.projects.some((item) => item.id === id),
+  );
+  const restored = organizeStories({
+    ...result,
+    projects: putItem(result.projects, project),
+  });
+  try {
+    validateBackup(restored);
+  } catch {
+    throw new Error(
+      "復元すると参照や人物関係が成立しなくなります。参照先を確認してから戻してください。",
+    );
+  }
+  return restored;
 }

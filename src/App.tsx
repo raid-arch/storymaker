@@ -1,3 +1,4 @@
+import TimelineBoard from "./TimelineBoard";
 import { AndroidApp, isAndroidApp, saveTextFile } from "./native";
 import AndroidUpdates from "./AndroidUpdates";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -49,6 +50,9 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 import { load, persist } from "./storage";
 import {
   sharedProjectIds,
+  isWorldLibrary,
+  referencedWorldIds,
+  organizeStories,
   deleteEntry,
   deleteProject,
   descendants,
@@ -254,6 +258,7 @@ export default function App() {
     [view, setView] = useState<View>("dashboard"),
     [entryId, setEntryId] = useState(""),
     [search, setSearch] = useState("");
+  const [libraryKind, setLibraryKind] = useState<"story" | "world">("story");
   const [projectMenu, setProjectMenu] = useState(false),
     [mobileMenu, setMobileMenu] = useState(false),
     [quick, setQuick] = useState(false),
@@ -562,16 +567,16 @@ export default function App() {
     navigate("dashboard");
     setProjectMenu(false);
   }
-  function makeProject() {
+  function makeProject(kind: "story" | "world" = "story") {
     setTimeSelection({ eraId: "" });
-    setProjectDraft(newProject());
+    setProjectDraft(newProject(kind));
     setProjectNew(true);
     setProjectMenu(false);
   }
   function quickEntry(kind: Kind) {
     setTimeSelection({ eraId: "" });
     if (!data?.projects.length) {
-      setNotice("先にプロジェクトを作成してください。");
+      setNotice("先にストーリーを作成してください。");
       makeProject();
       return;
     }
@@ -583,7 +588,7 @@ export default function App() {
     setTimeSelection({ eraId: "" });
     const id = character?.projectId || projectId || data?.projects[0]?.id;
     if (!id) {
-      setNotice("先にプロジェクトを作成してください。");
+      setNotice("先にストーリーを作成してください。");
       makeProject();
       return;
     }
@@ -604,7 +609,7 @@ export default function App() {
       }
       change((d) => ({ ...d, lastBackup: stamp }));
       setNotice(
-        "全プロジェクトのJSONを書き出しました。安全な場所に保管してください。",
+        "全ストーリーのJSONを書き出しました。安全な場所に保管してください。",
       );
     } catch {
       setNotice(
@@ -618,7 +623,7 @@ export default function App() {
       if (file.size > 100 * 1024 * 1024)
         throw new Error("100MB以下のバックアップを選択してください。");
       const raw = JSON.parse(await file.text());
-      setImported(validateBackup(raw));
+      setImported(organizeStories(validateBackup(raw)));
     } catch (e) {
       setNotice(
         e instanceof Error ? e.message : "バックアップを読み込めませんでした。",
@@ -711,12 +716,12 @@ export default function App() {
     });
   const removeProject = (p: Project) =>
     setConfirm({
-      title: "プロジェクトを削除しますか？",
-      message: `「${p.name}」と下位の作品・章、すべての設定を削除します。必要に応じて先にバックアップしてください。操作は取り消せます。`,
+      title: "ストーリーを削除しますか？",
+      message: `「${p.name}」と、この保存先の設定を削除します。参照しているほかのストーリーや世界観は残ります。必要に応じて先にバックアップしてください。操作は取り消せます。`,
       action: () => {
         change((d) => deleteProject(d, p.id));
         setProjectId("");
-        setNotice("プロジェクトを削除しました。");
+        setNotice("ストーリーを削除しました。");
         setUndoNotice(true);
       },
     });
@@ -743,8 +748,7 @@ export default function App() {
     setUndoNotice(true);
   }
   function projectCrumb(p: Project): string {
-    const parent = data?.projects.find((x) => x.id === p.parentId);
-    return parent ? `${projectCrumb(parent)} / ${p.name}` : p.name;
+    return p.name;
   }
   function empty(kind: Kind) {
     return (
@@ -808,22 +812,42 @@ export default function App() {
               <BookOpen size={18} />
             </span>
             <span>
-              <small>現在のプロジェクト</small>
-              <strong>{project?.name || "プロジェクトを作成"}</strong>
+              <small>
+                {project && isWorldLibrary(project)
+                  ? "編集中の世界観"
+                  : "現在のストーリー"}
+              </small>
+              <strong>{project?.name || "ストーリーを作成"}</strong>
             </span>
             <ChevronDown size={15} />
           </button>
           {projectMenu && (
             <div className="project-menu">
               {data.projects.map((p) => (
-                <button key={p.id} onClick={() => selectProject(p.id)}>
-                  <span>{p.name}</span>
+                <button
+                  key={p.id}
+                  aria-label={p.name}
+                  onClick={() => selectProject(p.id)}
+                >
+                  <span>
+                    {isWorldLibrary(p) ? "資料：" : "ストーリー："}
+                    {p.name}
+                  </span>
                   {currentId === p.id && <Check size={14} />}
                 </button>
               ))}
-              <button onClick={makeProject}>
+              <button
+                onClick={() => {
+                  setLibraryKind("world");
+                  navigate("projects");
+                  setProjectMenu(false);
+                }}
+              >
+                世界観ライブラリ
+              </button>
+              <button onClick={() => makeProject()}>
                 <Plus size={15} />
-                新規プロジェクト
+                新規ストーリー
               </button>
               <button
                 onClick={() => {
@@ -832,7 +856,7 @@ export default function App() {
                 }}
               >
                 <FolderOpen size={15} />
-                プロジェクトを管理
+                ストーリーを管理
               </button>
             </div>
           )}
@@ -878,10 +902,23 @@ export default function App() {
           </div>
           <button
             className={view === "projects" ? "active" : ""}
-            onClick={() => navigate("projects")}
+            onClick={() => {
+              setLibraryKind("story");
+              navigate("projects");
+            }}
           >
             <FolderOpen size={17} />
-            プロジェクト管理
+            ストーリー管理
+          </button>
+          <button
+            className="sidebar-bottom-button"
+            onClick={() => {
+              setLibraryKind("world");
+              navigate("projects");
+            }}
+          >
+            <Globe2 size={17} />
+            世界観ライブラリ
           </button>
           <button
             className={view === "settings" ? "active" : ""}
@@ -1020,7 +1057,9 @@ export default function App() {
             saveState={saveState}
             expanded={view === "settings" && !search && !selected}
             onOpen={() => navigate("settings")}
-            onReplace={(incoming) => change(() => incoming, "", false)}
+            onReplace={(incoming) =>
+              change(() => organizeStories(incoming), "", false)
+            }
           />
           {project && !["settings", "projects"].includes(view) && (
             <TimeSwitcher
@@ -1033,50 +1072,67 @@ export default function App() {
           )}
           {project && !selected && !["settings", "projects"].includes(view) && (
             <section
-              className="panel"
-              style={{ padding: "1rem", marginBottom: "1rem" }}
-              aria-label="世界観と物語"
+              className="panel workspace-context"
+              aria-label="ストーリーと参照資料"
             >
-              <strong>{projectCrumb(project)}</strong>
-              <p>
-                上位プロジェクトの設定は共通設定として表示されます。各物語の設定は、ほかの物語には表示されません。
-              </p>
+              <strong>
+                {isWorldLibrary(project) ? "世界観の設定資料" : "ストーリー"}：
+                {project.name}
+              </strong>
+              {isWorldLibrary(project) ? (
+                <>
+                  <p>
+                    人物・国家・歴史などの事前情報です。参照するストーリーからも同じ資料を使えます。
+                  </p>
+                  <button
+                    className="button subtle"
+                    onClick={() => {
+                      setProjectDraft({
+                        ...newProject(),
+                        worldIds: [currentId],
+                      });
+                      setProjectNew(true);
+                    }}
+                  >
+                    <Plus size={16} />
+                    この世界観を使うストーリーを作成
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>
+                    参照する世界観：
+                    {referencedWorldIds(data, project)
+                      .map((id) => data.projects.find((p) => p.id === id)?.name)
+                      .filter(Boolean)
+                      .join("、") || "未選択（ストーリーだけでも使えます）"}
+                  </p>
+                  <button
+                    className="button subtle"
+                    onClick={() => {
+                      setProjectDraft({ ...project });
+                      setProjectNew(false);
+                    }}
+                  >
+                    参照する世界観を変更
+                  </button>
+                </>
+              )}
               {sharedIds.size > 1 && (
-                <p>
-                  共通設定：
+                <small>
+                  参照資料の設定：
                   {
                     projectEntries.filter((e) => e.projectId !== currentId)
                       .length
                   }
-                  件 ／ この物語の設定：
+                  件 ／ この保存先の設定：
                   {
                     projectEntries.filter((e) => e.projectId === currentId)
                       .length
                   }
-                  件。共通設定の編集は、共有する物語すべてに反映されます。
-                </p>
+                  件。資料の編集は、参照するストーリーにも反映されます。
+                </small>
               )}
-              <button
-                className="button subtle"
-                onClick={() => {
-                  setProjectDraft({ ...newProject(), parentId: currentId });
-                  setProjectNew(true);
-                }}
-              >
-                <Plus size={16} />
-                この世界観に物語・章を追加
-              </button>
-              {data.projects
-                .filter((p) => p.parentId === currentId)
-                .map((p) => (
-                  <button
-                    className="button subtle"
-                    key={p.id}
-                    onClick={() => selectProject(p.id)}
-                  >
-                    {p.name}をひらく
-                  </button>
-                ))}
             </section>
           )}
           {search.trim() ? (
@@ -1086,7 +1142,7 @@ export default function App() {
                   <span className="eyebrow">SEARCH YOUR UNIVERSE</span>
                   <h1>「{search}」の検索結果</h1>
                   <p className="muted">
-                    全プロジェクトから、本文・真相・自由項目・タグまで検索します。
+                    全ストーリーから、本文・真相・自由項目・タグまで検索します。
                   </p>
                 </div>
                 <span className="count">
@@ -1098,7 +1154,7 @@ export default function App() {
               </div>
               {searchProjects.length > 0 && (
                 <section className="section">
-                  <h2>プロジェクト</h2>
+                  <h2>ストーリー・世界観資料</h2>
                   <div className="project-grid">
                     {searchProjects.map((p) => (
                       <button
@@ -1122,7 +1178,7 @@ export default function App() {
                   <EntryCard
                     key={e.id}
                     entry={e}
-                    source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
+                    source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "世界観資料" : "別の保存先"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                     onOpen={() => open(e.id)}
                     onActions={() =>
                       setActionTarget({ kind: "entry", id: e.id })
@@ -1322,7 +1378,7 @@ export default function App() {
                               setProjectNew(false);
                             }}
                           >
-                            プロジェクトを編集
+                            ストーリーを編集
                             <ArrowRight size={15} />
                           </button>
                         </div>
@@ -1419,7 +1475,7 @@ export default function App() {
                             {recent.map((e) => (
                               <EntryCard
                                 entry={e}
-                                source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
+                                source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "世界観資料" : "別の保存先"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                                 key={e.id}
                                 onOpen={() => open(e.id)}
                                 onActions={() =>
@@ -1525,10 +1581,13 @@ export default function App() {
                     <div className="empty-state panel">
                       <Sprout size={45} />
                       <h2>あなたの物語を、ここから。</h2>
-                      <p>最初のプロジェクトを作成しましょう。</p>
-                      <button className="button primary" onClick={makeProject}>
+                      <p>最初のストーリーを作成しましょう。</p>
+                      <button
+                        className="button primary"
+                        onClick={() => makeProject()}
+                      >
                         <Plus size={16} />
-                        プロジェクトを作成
+                        ストーリーを作成
                       </button>
                     </div>
                   )}
@@ -1717,7 +1776,7 @@ export default function App() {
                               value={timelineScope}
                               onChange={(e) => setTimelineScope(e.target.value)}
                             >
-                              <option value="">世界共通の年表</option>
+                              <option value="">すべての人物・国家</option>
                               {projectEntries
                                 .filter(
                                   (e) =>
@@ -1776,78 +1835,41 @@ export default function App() {
                         </div>
                       </div>
                       {view === "event" ? (
-                        timeline.length ? (
-                          <div className="timeline">
-                            {timeline.map((e, i) => (
-                              <div className="timeline-row" key={e.id}>
-                                <div className="timeline-date">
-                                  <span>
-                                    {e.fields.年代?.trim()
-                                      ? e.fields.年代 + " 年"
-                                      : "年代未確定"}
-                                  </span>
-                                  <small>{e.fields.時期}</small>
-                                </div>
-                                <div className="timeline-line">
-                                  <i />
-                                </div>
-                                <CardSurface
-                                  className="timeline-card-wrap"
-                                  onActions={() =>
-                                    setActionTarget({ kind: "entry", id: e.id })
-                                  }
-                                >
-                                  <button
-                                    className="panel timeline-card"
-                                    onClick={() => open(e.id)}
-                                  >
-                                    <div>
-                                      <span className="eyebrow">
-                                        EVENT {String(i + 1).padStart(2, "0")}
-                                      </span>
-                                      <Badge status={e.status} />
-                                    </div>
-                                    <h2>{e.name}</h2>
-                                    <p>{e.body}</p>
-                                    <div className="tag-list">
-                                      {e.links.map((id) => {
-                                        const linked = data.entries.find(
-                                          (x) => x.id === id,
-                                        );
-                                        return (
-                                          linked && (
-                                            <span key={id}>
-                                              <Link2 size={11} />
-                                              {linked.name}
-                                            </span>
-                                          )
-                                        );
-                                      })}
-                                    </div>
-                                  </button>
-                                  <CardMenuButton
-                                    name={e.name}
-                                    onClick={() =>
-                                      setActionTarget({
-                                        kind: "entry",
-                                        id: e.id,
-                                      })
-                                    }
-                                  />
-                                </CardSurface>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          empty("event")
-                        )
+                        <TimelineBoard
+                          key={currentId}
+                          data={readingData}
+                          projectId={currentId}
+                          entries={timeline}
+                          onOpen={open}
+                          onActions={(id) =>
+                            setActionTarget({ kind: "entry", id })
+                          }
+                          readOnly={historical}
+                          onOrder={(ids) =>
+                            change(
+                              (d) => ({
+                                ...d,
+                                projects: d.projects.map((p) =>
+                                  p.id === currentId
+                                    ? {
+                                        ...p,
+                                        eventOrder: ids,
+                                        updatedAt: now(),
+                                      }
+                                    : p,
+                                ),
+                              }),
+                              `timeline:${currentId}`,
+                            )
+                          }
+                        />
                       ) : visible.length ? (
                         <div className="card-grid">
                           {visible.map((e) => (
                             <EntryCard
                               key={e.id}
                               entry={e}
-                              source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
+                              source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "世界観資料" : "別の保存先"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                               onOpen={() => open(e.id)}
                               onActions={() =>
                                 setActionTarget({ kind: "entry", id: e.id })
@@ -1881,91 +1903,138 @@ export default function App() {
                   <div className="page-title">
                     <div>
                       <span className="eyebrow">A SHELF OF YOUR WORLDS</span>
-                      <h1>プロジェクト</h1>
+                      <h1>
+                        {libraryKind === "world"
+                          ? "世界観ライブラリ"
+                          : "ストーリー"}
+                      </h1>
                       <p>
-                        世界観を作り、その下に複数の物語・章を追加できます。上位の設定は共通で使えます。
+                        世界観は独立した事前情報として作成し、ストーリーで参照します。親子関係を作る必要はありません。
                       </p>
                     </div>
-                    <button className="button primary" onClick={makeProject}>
+                    <button
+                      className="button primary"
+                      onClick={() => makeProject(libraryKind)}
+                    >
                       <Plus size={16} />
-                      新しいプロジェクト
+                      {libraryKind === "world"
+                        ? "世界観を作成"
+                        : "新しいストーリー"}
+                    </button>
+                  </div>
+                  <div
+                    className="library-tabs"
+                    aria-label="ストーリーと世界観の切替"
+                  >
+                    <button
+                      className="button subtle"
+                      aria-pressed={libraryKind === "story"}
+                      onClick={() => setLibraryKind("story")}
+                    >
+                      ストーリー
+                    </button>
+                    <button
+                      className="button subtle"
+                      aria-pressed={libraryKind === "world"}
+                      onClick={() => setLibraryKind("world")}
+                    >
+                      世界観ライブラリ
                     </button>
                   </div>
                   <div className="project-grid">
-                    {data.projects.map((p) => (
-                      <CardSurface
-                        className="panel project-card"
-                        key={p.id}
-                        onActions={() =>
-                          setActionTarget({ kind: "project", id: p.id })
-                        }
-                      >
-                        <CardMenuButton
-                          name={p.name}
-                          onClick={() =>
+                    {data.projects
+                      .filter(
+                        (p) => isWorldLibrary(p) === (libraryKind === "world"),
+                      )
+                      .map((p) => (
+                        <CardSurface
+                          className="panel project-card"
+                          key={p.id}
+                          onActions={() =>
                             setActionTarget({ kind: "project", id: p.id })
                           }
-                        />
-                        {p.image ? (
-                          <img className="project-cover" src={p.image} alt="" />
-                        ) : (
-                          <div className="project-cover empty-cover">
-                            <Sprout size={38} strokeWidth={1} />
+                        >
+                          <CardMenuButton
+                            name={p.name}
+                            onClick={() =>
+                              setActionTarget({ kind: "project", id: p.id })
+                            }
+                          />
+                          {p.image ? (
+                            <img
+                              className="project-cover"
+                              src={p.image}
+                              alt=""
+                            />
+                          ) : (
+                            <div className="project-cover empty-cover">
+                              <Sprout size={38} strokeWidth={1} />
+                            </div>
+                          )}
+                          <div className="project-card-body">
+                            <div className="section-heading">
+                              <span className="eyebrow">{p.type}</span>
+                              <Badge status={p.status} />
+                            </div>
+                            <small className="muted">
+                              {isWorldLibrary(p)
+                                ? "独立した設定資料"
+                                : `参照世界観：${
+                                    referencedWorldIds(data, p)
+                                      .map(
+                                        (id) =>
+                                          data.projects.find(
+                                            (source) => source.id === id,
+                                          )?.name,
+                                      )
+                                      .filter(Boolean)
+                                      .join("、") || "なし"
+                                  }`}
+                            </small>
+                            <h2>{p.name || "名前未設定"}</h2>
+                            <p>{p.description || "説明はまだありません。"}</p>
+                            <div className="tag-list">
+                              {p.tags.map((t) => (
+                                <span key={t}>#{t}</span>
+                              ))}
+                            </div>
+                            <div className="project-card-actions">
+                              <button
+                                className="text-button"
+                                onClick={() => selectProject(p.id)}
+                              >
+                                {isWorldLibrary(p)
+                                  ? "資料をひらく"
+                                  : "ストーリーをひらく"}
+                                <ArrowRight size={14} />
+                              </button>
+                              <button
+                                className="icon-button"
+                                aria-label={`${p.name}を編集`}
+                                onClick={() => {
+                                  setProjectDraft({ ...p });
+                                  setProjectNew(false);
+                                }}
+                              >
+                                <Pencil size={15} />
+                              </button>
+                              <button
+                                className="icon-button danger"
+                                aria-label={`${p.name}を削除`}
+                                onClick={() => removeProject(p)}
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
                           </div>
-                        )}
-                        <div className="project-card-body">
-                          <div className="section-heading">
-                            <span className="eyebrow">{p.type}</span>
-                            <Badge status={p.status} />
-                          </div>
-                          <small className="muted">
-                            {p.parentId
-                              ? projectCrumb(p)
-                                  .split(" / ")
-                                  .slice(0, -1)
-                                  .join(" / ")
-                              : "独立したプロジェクト"}
-                          </small>
-                          <h2>{p.name || "名前未設定"}</h2>
-                          <p>{p.description || "説明はまだありません。"}</p>
-                          <div className="tag-list">
-                            {p.tags.map((t) => (
-                              <span key={t}>#{t}</span>
-                            ))}
-                          </div>
-                          <div className="project-card-actions">
-                            <button
-                              className="text-button"
-                              onClick={() => selectProject(p.id)}
-                            >
-                              物語をひらく
-                              <ArrowRight size={14} />
-                            </button>
-                            <button
-                              className="icon-button"
-                              aria-label={`${p.name}を編集`}
-                              onClick={() => {
-                                setProjectDraft({ ...p });
-                                setProjectNew(false);
-                              }}
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              className="icon-button danger"
-                              aria-label={`${p.name}を削除`}
-                              onClick={() => removeProject(p)}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </div>
-                      </CardSurface>
-                    ))}
+                        </CardSurface>
+                      ))}
                   </div>
-                  {!data.projects.length && (
+                  {!data.projects.some(
+                    (p) => isWorldLibrary(p) === (libraryKind === "world"),
+                  ) && (
                     <div className="empty-state">
-                      <p>新しいプロジェクトを作成して始めましょう。</p>
+                      <p>新しいストーリーを作成して始めましょう。</p>
                     </div>
                   )}
                 </>
@@ -2024,7 +2093,7 @@ export default function App() {
                         JSONから復元・別の端末へ移行
                       </button>
                       <small>
-                        JSONには画像・リンク・人物関係・全プロジェクトが含まれます。復元は現在のデータを置き換えます。
+                        JSONには画像・リンク・人物関係・全ストーリーが含まれます。復元は現在のデータを置き換えます。
                       </small>
                       <button
                         className="text-button space-top"
@@ -2054,7 +2123,7 @@ export default function App() {
                           Markdownで持ち出す
                         </h2>
                         <p>
-                          現在のプロジェクトと下位の作品・章を、読みやすいテキストとして書き出します。画像はJSONバックアップをご利用ください。
+                          現在のストーリーと参照する世界観の設定を、読みやすいテキストとして書き出します。画像はJSONバックアップをご利用ください。
                         </p>
                         <button
                           className="button subtle full"
@@ -2276,7 +2345,7 @@ export default function App() {
                       <Download size={20} />
                       <span>
                         Markdownで書き出す
-                        <small>下位の作品・章の設定も含める</small>
+                        <small>参照する世界観の設定も含める</small>
                       </span>
                       <ChevronRight size={16} />
                     </button>
@@ -2463,7 +2532,11 @@ export default function App() {
             isNew={projectNew}
             onError={setNotice}
             onChange={(p) => {
-              if (!projectNew && p.parentId !== projectDraft.parentId) {
+              if (
+                !projectNew &&
+                JSON.stringify(p.worldIds) !==
+                  JSON.stringify(projectDraft.worldIds)
+              ) {
                 const candidate = {
                   ...data,
                   projects: data.projects.map((item) =>
@@ -2486,7 +2559,7 @@ export default function App() {
                   })
                 ) {
                   setNotice(
-                    "共通人物との関係が共有範囲から外れます。先に人物関係を整理してから上位プロジェクトを変更してください。",
+                    "参照を外すと人物関係が参照範囲の外になります。先に該当する人物関係を整理してください。",
                   );
                   return;
                 }
@@ -2625,7 +2698,7 @@ export default function App() {
           </div>
           <h2>バックアップを復元しますか？</h2>
           <p className="confirm-message">
-            読み込んだ {imported.projects.length} プロジェクト・
+            読み込んだ {imported.projects.length} ストーリー・
             {imported.entries.length}{" "}
             件の設定で、現在の全データを置き換えます。復元前に現在のJSONを書き出すことをおすすめします。
           </p>

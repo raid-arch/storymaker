@@ -32,11 +32,11 @@ test("fresh visitors see a blank workspace with no story or sample data", async 
   expect(snapshot.entries).toEqual([]);
   expect(snapshot.relations).toEqual([]);
   await page
-    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
   await page.getByRole("textbox", { name: /作品名/ }).fill("自分だけの作品");
   await page.getByRole("dialog")
-    .getByRole("button", { name: "プロジェクトを作成", exact: true })
+    .getByRole("button", { name: "ストーリーを作成", exact: true })
     .click();
   await expect(page.locator(".save-indicator")).toContainText("保存済み");
   await page.reload();
