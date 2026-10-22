@@ -1,4 +1,4 @@
-import { sharedProjectIds, organizeStories, validateBackup } from "../model";
+import { isWorldLibrary, sharedProjectIds, organizeStories, validateBackup } from "../model";
 import type { Data, Entry, Kind, Project } from "../model";
 
 export interface Asset {
@@ -783,6 +783,7 @@ export function restoreRevision(data: Data, revision: Revision): Data {
     ancestor =
       result.projects.find((item) => item.id === ancestor)?.parentId || "";
   }
+  if (project.collectionId && !result.projects.some((item) => item.id === project.collectionId && (isWorldLibrary(item) || item.type === "シリーズ"))) project.collectionId = "";
   project.worldIds = project.worldIds?.filter(
     (id) => id !== project.id && result.projects.some((item) => item.id === id),
   );

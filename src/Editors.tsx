@@ -211,7 +211,7 @@ export function ProjectForm({
         <fieldset className="world-reference-picker">
           <legend>参照する世界観</legend>
           <p>
-            事前に作った設定資料を選びます。親子関係ではなく、複数のストーリーから同じ世界観を参照できます。
+            事前に作った設定資料を選びます。ツリーの所属とは別に、複数の世界観を参照できます。
           </p>
           {data.projects
             .filter(

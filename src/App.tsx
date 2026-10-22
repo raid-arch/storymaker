@@ -1,4 +1,6 @@
 import TimelineBoard from "./TimelineBoard";
+import ProjectTree from "./ProjectTree";
+import { moveOnShelf, shelfSources } from "./collections";
 import { AndroidApp, isAndroidApp, saveTextFile } from "./native";
 import AndroidUpdates from "./AndroidUpdates";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
@@ -2011,7 +2013,7 @@ export default function App() {
                           : "ストーリー"}
                       </h1>
                       <p>
-                        世界観は独立した事前情報として作成し、ストーリーで参照します。親子関係を作る必要はありません。
+                        世界観・シリーズ・作品をツリーで整理し、ストーリーから世界観の設定を参照できます。
                       </p>
                     </div>
                     <button
@@ -2024,6 +2026,25 @@ export default function App() {
                         : "新しいストーリー"}
                     </button>
                   </div>
+                  <ProjectTree
+                    data={data}
+                    onOpen={selectProject}
+                    onEdit={editProject}
+                    onCreate={(kind, parentId) => {
+                      setProjectDraft({ ...newProject(kind === "world" ? "world" : "story"), type: kind === "series" ? "シリーズ" : kind === "world" ? "世界観" : "作品", collectionId: parentId, worldIds: shelfSources(data, parentId) });
+                      setProjectNew(true);
+                    }}
+                    onMove={(id, parentId) => {
+                      try {
+                        const moved = moveOnShelf(data, id, parentId);
+                        validateBackup(moved);
+                        change(() => moved);
+                        setNotice("ツリーの所属を変更しました。以前の参照も保持しています。");
+                      } catch {
+                        setNotice("この場所へ移動できません。参照関係やシリーズの所属を確認してください。");
+                      }
+                    }}
+                  />
                   <div
                     className="library-tabs"
                     aria-label="ストーリーと世界観の切替"
@@ -2636,6 +2657,10 @@ export default function App() {
             isNew={projectNew}
             onError={setNotice}
             onChange={(p) => {
+              if (!isWorldLibrary(p) && p.type !== "シリーズ" && data.projects.some((child) => child.collectionId === p.id)) {
+                setNotice("作品を含むシリーズです。先にツリーで中の作品を別の所属へ移動してください。");
+                return;
+              }
               if (
                 !projectNew &&
                 JSON.stringify(p.worldIds) !==

@@ -36,6 +36,8 @@ export interface Project {
   parentId: string;
   workspaceKind?: "story" | "world";
   worldIds?: string[];
+  /** Visual shelf placement, separate from setting references and legacy parents. */
+  collectionId?: string;
   eventOrder?: string[];
   updatedAt: string;
 }
@@ -274,6 +276,7 @@ export function deleteProject(data: Data, id: string): Data {
         .filter((p) => !ids.has(p.id))
         .map((p) => ({
           ...p,
+          collectionId: p.collectionId && ids.has(p.collectionId) ? "" : p.collectionId,
           worldIds: p.worldIds?.filter((source) => !ids.has(source)),
           eventOrder: p.eventOrder?.filter((eventId) => !removed.has(eventId)),
         })),
@@ -422,6 +425,7 @@ export function validateBackup(raw: unknown): Data {
       !str(p.type) ||
       (p.workspaceKind !== undefined &&
         !["story", "world"].includes(p.workspaceKind)) ||
+      (p.collectionId !== undefined && !str(p.collectionId)) ||
       (p.worldIds !== undefined && !list(p.worldIds)) ||
       (p.eventOrder !== undefined && !list(p.eventOrder)) ||
       !p.id ||
@@ -431,6 +435,18 @@ export function validateBackup(raw: unknown): Data {
     ids.add(p.id);
   }
   for (const p of d.projects) {
+    if (p.collectionId) {
+      if (isWorldLibrary(p)) return fail();
+      const seen = new Set([p.id]);
+      let parent = p.collectionId;
+      while (parent) {
+        if (seen.has(parent)) return fail();
+        seen.add(parent);
+        const target = d.projects.find((item) => item.id === parent);
+        if (!target || (!isWorldLibrary(target) && target.type !== "シリーズ")) return fail();
+        parent = target.collectionId || "";
+      }
+    }
     if (p.parentId && !ids.has(p.parentId)) return fail();
     if (p.worldIds?.some((id) => !ids.has(id) || id === p.id)) return fail();
     const visiting = new Set<string>(),
