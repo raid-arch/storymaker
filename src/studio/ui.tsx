@@ -23,6 +23,7 @@ export interface StudioProps {
   notice: (text: string) => void;
   confirm: Confirm;
   focusId?: string;
+  onWriteScene?: (id: string) => void;
   onNavigate: (tab: StudioTab, id?: string) => void;
   selection?: TimeSelection;
   onTimeChange?: (selection: TimeSelection) => void;

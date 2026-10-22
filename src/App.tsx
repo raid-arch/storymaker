@@ -84,6 +84,7 @@ import { PublicReader } from "./studio/PublicPanel";
 import { searchStudio } from "./studio/search";
 import { publicDocument } from "./studio/publication";
 import { familyLayout } from "./studio/family";
+const CreationWorkspace = lazy(() => import("./CreationWorkspace"));
 const StudioHub = lazy(() => import("./studio/StudioHub"));
 import { TimeSwitcher, EraEntryPreview } from "./studio/TimeSwitcher";
 import { dataAtTime } from "./studio/time";
@@ -91,6 +92,7 @@ import type { TimeSelection } from "./studio/time";
 import { checkpoint, rememberChanges } from "./studio/model";
 import type { StudioTab } from "./studio/model";
 type View =
+  | "creation"
   | "dashboard"
   | "character"
   | "world"
@@ -101,6 +103,7 @@ type View =
   | "settings"
   | "studio";
 const nav: { id: View; label: string; icon: LucideIcon; en: string }[] = [
+  { id: "creation", label: "制作画面", icon: PanelsTopLeft, en: "CREATE" },
   {
     id: "dashboard",
     label: "ダッシュボード",
@@ -275,6 +278,10 @@ export default function App() {
     [statusFilter, setStatusFilter] = useState("すべて"),
     [timelineScope, setTimelineScope] = useState(""),
     [clueFilter, setClueFilter] = useState("すべて");
+  const [creationSceneId, setCreationSceneId] = useState("");
+  const [relationInitialId, setRelationInitialId] = useState<
+    string | undefined
+  >();
   const [categoryDraft, setCategoryDraft] = useState(""),
     [categoryOpen, setCategoryOpen] = useState(false);
   const [notice, setNotice] = useState(""),
@@ -376,6 +383,15 @@ export default function App() {
         if (active) {
           setData(d);
           setProjectId(d.projects[0]?.id || "");
+          try {
+            const last = localStorage.getItem("tsuzuriniwa:active-workspace");
+            if (last && d.projects.some((p) => p.id === last)) {
+              setProjectId(last);
+              setView("creation");
+            }
+          } catch {
+            /* Local storage is optional; IndexedDB remains the source of truth. */
+          }
         }
       })
       .catch((e) => active && setLoadError(String(e)));
@@ -383,6 +399,13 @@ export default function App() {
       active = false;
     };
   }, []);
+  useEffect(() => {
+    if (view === "creation" && data?.projects.some((p) => p.id === projectId)) {
+      try {
+        localStorage.setItem("tsuzuriniwa:active-workspace", projectId);
+      } catch {}
+    }
+  }, [view, projectId, data?.projects]);
   useEffect(() => {
     if (!data) return;
     const root = document.documentElement;
@@ -526,6 +549,7 @@ export default function App() {
     }
   }
   function navigate(v: View) {
+    if (v === "creation") setTimeSelection({ eraId: "" });
     setView(v);
     setEntryId("");
     setSearch("");
@@ -537,6 +561,16 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }
   function showStudio(tab: StudioTab, id = "") {
+    if (
+      tab === "plot" &&
+      id &&
+      (dataRef.current?.studio?.scenes.some((scene) => scene.id === id) ||
+        dataRef.current?.studio?.portrayals?.some((item) => item.id === id))
+    ) {
+      navigate("creation");
+      setCreationSceneId(id);
+      return;
+    }
     navigate("studio");
     setStudioTab(tab);
     setStudioFocus(id);
@@ -564,7 +598,8 @@ export default function App() {
   function selectProject(id: string) {
     setTimeSelection({ eraId: "" });
     setProjectId(id);
-    navigate("dashboard");
+    setCreationSceneId("");
+    navigate("creation");
     setProjectMenu(false);
   }
   function makeProject(kind: "story" | "world" = "story") {
@@ -1061,7 +1096,7 @@ export default function App() {
               change(() => organizeStories(incoming), "", false)
             }
           />
-          {project && !["settings", "projects"].includes(view) && (
+          {project && !["settings", "projects", "creation"].includes(view) && (
             <TimeSwitcher
               data={data}
               projectId={currentId}
@@ -1070,71 +1105,75 @@ export default function App() {
               onManage={() => showStudio("eras")}
             />
           )}
-          {project && !selected && !["settings", "projects"].includes(view) && (
-            <section
-              className="panel workspace-context"
-              aria-label="ストーリーと参照資料"
-            >
-              <strong>
-                {isWorldLibrary(project) ? "世界観の設定資料" : "ストーリー"}：
-                {project.name}
-              </strong>
-              {isWorldLibrary(project) ? (
-                <>
-                  <p>
-                    人物・国家・歴史などの事前情報です。参照するストーリーからも同じ資料を使えます。
-                  </p>
-                  <button
-                    className="button subtle"
-                    onClick={() => {
-                      setProjectDraft({
-                        ...newProject(),
-                        worldIds: [currentId],
-                      });
-                      setProjectNew(true);
-                    }}
-                  >
-                    <Plus size={16} />
-                    この世界観を使うストーリーを作成
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p>
-                    参照する世界観：
-                    {referencedWorldIds(data, project)
-                      .map((id) => data.projects.find((p) => p.id === id)?.name)
-                      .filter(Boolean)
-                      .join("、") || "未選択（ストーリーだけでも使えます）"}
-                  </p>
-                  <button
-                    className="button subtle"
-                    onClick={() => {
-                      setProjectDraft({ ...project });
-                      setProjectNew(false);
-                    }}
-                  >
-                    参照する世界観を変更
-                  </button>
-                </>
-              )}
-              {sharedIds.size > 1 && (
-                <small>
-                  参照資料の設定：
-                  {
-                    projectEntries.filter((e) => e.projectId !== currentId)
-                      .length
-                  }
-                  件 ／ この保存先の設定：
-                  {
-                    projectEntries.filter((e) => e.projectId === currentId)
-                      .length
-                  }
-                  件。資料の編集は、参照するストーリーにも反映されます。
-                </small>
-              )}
-            </section>
-          )}
+          {project &&
+            !selected &&
+            !["settings", "projects", "creation"].includes(view) && (
+              <section
+                className="panel workspace-context"
+                aria-label="ストーリーと参照資料"
+              >
+                <strong>
+                  {isWorldLibrary(project) ? "世界観の設定資料" : "ストーリー"}
+                  ：{project.name}
+                </strong>
+                {isWorldLibrary(project) ? (
+                  <>
+                    <p>
+                      人物・国家・歴史などの事前情報です。参照するストーリーからも同じ資料を使えます。
+                    </p>
+                    <button
+                      className="button subtle"
+                      onClick={() => {
+                        setProjectDraft({
+                          ...newProject(),
+                          worldIds: [currentId],
+                        });
+                        setProjectNew(true);
+                      }}
+                    >
+                      <Plus size={16} />
+                      この世界観を使うストーリーを作成
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      参照する世界観：
+                      {referencedWorldIds(data, project)
+                        .map(
+                          (id) => data.projects.find((p) => p.id === id)?.name,
+                        )
+                        .filter(Boolean)
+                        .join("、") || "未選択（ストーリーだけでも使えます）"}
+                    </p>
+                    <button
+                      className="button subtle"
+                      onClick={() => {
+                        setProjectDraft({ ...project });
+                        setProjectNew(false);
+                      }}
+                    >
+                      参照する世界観を変更
+                    </button>
+                  </>
+                )}
+                {sharedIds.size > 1 && (
+                  <small>
+                    参照資料の設定：
+                    {
+                      projectEntries.filter((e) => e.projectId !== currentId)
+                        .length
+                    }
+                    件 ／ この保存先の設定：
+                    {
+                      projectEntries.filter((e) => e.projectId === currentId)
+                        .length
+                    }
+                    件。資料の編集は、参照するストーリーにも反映されます。
+                  </small>
+                )}
+              </section>
+            )}
           {search.trim() ? (
             <>
               <div className="page-title">
@@ -1240,6 +1279,12 @@ export default function App() {
               <div className="entry-studio-tools">
                 <button
                   className="button subtle"
+                  onClick={() => navigate("creation")}
+                >
+                  制作画面へ戻る
+                </button>
+                <button
+                  className="button subtle"
                   onClick={() => showStudio("history", selected.id)}
                 >
                   変更履歴
@@ -1288,6 +1333,45 @@ export default function App() {
             </>
           ) : (
             <>
+              {view === "creation" && (
+                <Suspense
+                  fallback={
+                    <div className="studio-empty" role="status">
+                      制作画面を開いています…
+                    </div>
+                  }
+                >
+                  <CreationWorkspace
+                    key={`${currentId}:${creationSceneId}`}
+                    data={data}
+                    projectId={currentId}
+                    saveState={saveState}
+                    notice={setNotice}
+                    change={change}
+                    confirm={setConfirm}
+                    onOpen={open}
+                    initialSceneId={creationSceneId}
+                    onOverview={() => navigate("dashboard")}
+                    onStartStory={() => {
+                      setProjectDraft({
+                        ...newProject(),
+                        worldIds: [currentId],
+                      });
+                      setProjectNew(true);
+                    }}
+                    onEditProject={() => {
+                      if (project) {
+                        setProjectDraft({ ...project });
+                        setProjectNew(false);
+                      }
+                    }}
+                    onRelation={(id) => {
+                      setRelationInitialId(id);
+                      setRelationOpen(true);
+                    }}
+                  />
+                </Suspense>
+              )}
               {view === "studio" && (
                 <Suspense
                   fallback={
@@ -1305,6 +1389,10 @@ export default function App() {
                     confirm={setConfirm}
                     focusId={studioFocus}
                     onNavigate={showStudio}
+                    onWriteScene={(id) => {
+                      setCreationSceneId(id);
+                      navigate("creation");
+                    }}
                     tab={studioTab}
                     selection={timeSelection}
                     onTimeChange={setTimeSelection}
@@ -1315,6 +1403,18 @@ export default function App() {
               )}
               {view === "dashboard" && (
                 <>
+                  {project && (
+                    <button
+                      className="button primary creation-launch"
+                      onClick={() => navigate("creation")}
+                    >
+                      <PanelsTopLeft size={18} />
+                      {isWorldLibrary(project)
+                        ? "世界観を作る"
+                        : "ストーリーを作る"}{" "}
+                      · 制作画面を開く
+                    </button>
+                  )}
                   <div className="page-title dashboard-title">
                     <div>
                       <span className="eyebrow">YOUR STORY, YOUR UNIVERSE</span>
@@ -2220,13 +2320,15 @@ export default function App() {
           >
             <n.icon size={20} />
             <span>
-              {n.id === "dashboard"
-                ? "ホーム"
-                : n.id === "world"
-                  ? "世界観"
-                  : n.id === "family"
-                    ? "家系図"
-                    : "人物"}
+              {n.id === "creation"
+                ? "制作"
+                : n.id === "dashboard"
+                  ? "ホーム"
+                  : n.id === "world"
+                    ? "世界観"
+                    : n.id === "family"
+                      ? "家系図"
+                      : "人物"}
             </span>
           </button>
         ))}
@@ -2598,14 +2700,23 @@ export default function App() {
         </Modal>
       )}
       {relationOpen && (
-        <Modal onClose={() => setRelationOpen(false)}>
+        <Modal
+          onClose={() => {
+            setRelationOpen(false);
+            setRelationInitialId(undefined);
+          }}
+        >
           <RelationForm
             data={data}
             projectId={currentId}
             initialFrom={
-              selected?.kind === "character" ? selected.id : undefined
+              relationInitialId ||
+              (selected?.kind === "character" ? selected.id : undefined)
             }
-            onCancel={() => setRelationOpen(false)}
+            onCancel={() => {
+              setRelationOpen(false);
+              setRelationInitialId(undefined);
+            }}
             onSave={(r) => {
               change((d) => ({ ...d, relations: [...d.relations, r] }));
               setNotice("人物の関係を追加しました。");

@@ -39,6 +39,16 @@ export function searchStudio(
   add("terms", s.terms, "用語辞典");
   add("references", s.references, "画像資料");
   add("plot", s.scenes, "プロット・シーン");
+  add(
+    "plot",
+    (s.portrayals || []).map((item) => ({
+      ...item,
+      name:
+        data.entries.find((entry) => entry.id === item.entryId)?.name ||
+        "作品内の設定",
+    })),
+    "ストーリー固有の設定",
+  );
   add("maps", s.maps, "世界地図");
   add("knowledge", s.knowledge, "人物の認識");
   add("eras", s.eras, "時代");

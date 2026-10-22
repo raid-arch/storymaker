@@ -15,6 +15,7 @@ export default function PlotPanel({
   change,
   confirm,
   notice,
+  onWriteScene,
 }: StudioProps) {
   const s = studioOf(data);
   const [draft, setDraft] = useState<Scene | null>(
@@ -212,6 +213,14 @@ export default function PlotPanel({
                   {item.year !== undefined && <small>{item.year} 年</small>}
                   <p className="studio-card-summary">{item.summary}</p>
                   <div className="studio-actions">
+                    {onWriteScene && (
+                      <button
+                        className="button subtle"
+                        onClick={() => onWriteScene(item.id)}
+                      >
+                        このシーンを執筆
+                      </button>
+                    )}
                     <button
                       className="icon-button"
                       aria-label={`${item.name}を上へ`}

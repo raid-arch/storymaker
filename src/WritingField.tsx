@@ -9,6 +9,7 @@ export default function WritingField({
   placeholder,
   saveState,
   primary = false,
+  rows,
 }: {
   label: string;
   value: string;
@@ -16,6 +17,7 @@ export default function WritingField({
   placeholder?: string;
   saveState: string;
   primary?: boolean;
+  rows?: number;
 }) {
   const id = useId();
   const [expanded, setExpanded] = useState(false);
@@ -37,7 +39,7 @@ export default function WritingField({
       <textarea
         id={id}
         className={primary ? "long-editor" : ""}
-        rows={primary ? 10 : 4}
+        rows={rows ?? (primary ? 10 : 4)}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

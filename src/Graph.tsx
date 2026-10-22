@@ -221,13 +221,17 @@ export function RelationForm({
                 </small>
                 {r.note && <small>{r.note}</small>}
               </div>
-              <button
-                className="icon-button danger"
-                aria-label="関係を削除"
-                onClick={() => onRemove(r.id)}
-              >
-                <Trash2 size={15} />
-              </button>
+              {r.projectId === projectId ? (
+                <button
+                  className="icon-button danger"
+                  aria-label="関係を削除"
+                  onClick={() => onRemove(r.id)}
+                >
+                  <Trash2 size={15} />
+                </button>
+              ) : (
+                <small>世界観の関係（参照のみ）</small>
+              )}
             </div>
           ))}
       </div>

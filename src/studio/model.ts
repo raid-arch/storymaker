@@ -89,6 +89,16 @@ export interface PlotColumn {
   chapterId: string;
   order: number;
 }
+export interface Portrayal {
+  id: string;
+  projectId: string;
+  entryId: string;
+  role: string;
+  goal: string;
+  state: string;
+  notes: string;
+  custom?: { name: string; value: string }[];
+}
 export interface Scene {
   id: string;
   projectId: string;
@@ -100,6 +110,14 @@ export interface Scene {
   order: number;
   year?: number;
   links: string[];
+  manuscript?: string;
+  placeState?: string;
+  timeText?: string;
+  placeId?: string;
+  eventId?: string;
+  castIds?: string[];
+  participantStates?: Record<string, string>;
+  relationshipNotes?: string;
 }
 export interface Reference {
   id: string;
@@ -159,6 +177,7 @@ export interface Studio {
   terms: Term[];
   columns: PlotColumn[];
   scenes: Scene[];
+  portrayals: Portrayal[];
   references: Reference[];
   templates: Template[];
   publications: Publication[];
@@ -247,6 +266,7 @@ export function emptyStudio(): Studio {
     terms: [],
     columns: [],
     scenes: [],
+    portrayals: [],
     references: [],
     templates: [],
     publications: [],
@@ -425,7 +445,24 @@ export function validateStudio(raw: unknown): Studio {
       ]) &&
       strings(v.links) &&
       finite(v.order) &&
-      optionalNumber(v.year),
+      optionalNumber(v.year) &&
+      [
+        "manuscript",
+        "timeText",
+        "placeId",
+        "eventId",
+        "relationshipNotes",
+        "placeState",
+      ].every((key) => v[key] === undefined || text(v[key])) &&
+      (v.castIds === undefined || strings(v.castIds)) &&
+      (v.participantStates === undefined || texts(v.participantStates)),
+    portrayals: (v) =>
+      hasText(v, ["projectId", "entryId", "role", "goal", "state", "notes"]) &&
+      (v.custom === undefined ||
+        (Array.isArray(v.custom) &&
+          v.custom.every(
+            (field) => object(field) && hasText(field, ["name", "value"]),
+          ))),
     references: (v) =>
       hasText(v, [
         "projectId",
@@ -535,7 +572,24 @@ export function cleanStudio(
         ...column,
         chapterId: projectIds.has(column.chapterId) ? "" : column.chapterId,
       })),
-      scenes: links(keep(s.scenes)),
+      scenes: links(keep(s.scenes)).map((scene) => ({
+        ...scene,
+        placeId:
+          scene.placeId && entryIds.has(scene.placeId) ? "" : scene.placeId,
+        eventId:
+          scene.eventId && entryIds.has(scene.eventId) ? "" : scene.eventId,
+        castIds: scene.castIds?.filter((id) => !entryIds.has(id)),
+        participantStates:
+          scene.participantStates &&
+          Object.fromEntries(
+            Object.entries(scene.participantStates).filter(
+              ([id]) => !entryIds.has(id),
+            ),
+          ),
+      })),
+      portrayals: keep(s.portrayals || []).filter(
+        (item) => !entryIds.has(item.entryId),
+      ),
       references: links(keep(s.references)),
       templates: keep(s.templates),
       publications: keep(s.publications).filter(

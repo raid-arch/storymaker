@@ -103,7 +103,10 @@ test("story creation, independent stories, edit and persistence", async ({
   await saved(page);
   await page.reload();
   await switcher(page);
-  await page.getByRole("button", { name: "月の図書館", exact: true }).click();
+  await page
+    .locator(".project-menu")
+    .getByRole("button", { name: "月の図書館", exact: true })
+    .click();
   await expect(page.locator(".hero-content")).toContainText(
     "変更を保存しました",
   );

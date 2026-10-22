@@ -67,6 +67,15 @@ export function impactOf(data: Data, entryId: string, depth = 2): Impact[] {
   s.terms.forEach((item) =>
     add("terms", item.id, `用語：${item.name}`, item.projectId, item.links),
   );
+  (s.portrayals || []).forEach((item) =>
+    add(
+      "plot",
+      item.id,
+      `作品内の設定：${data.entries.find((entry) => entry.id === item.entryId)?.name || "設定"}`,
+      item.projectId,
+      [item.entryId],
+    ),
+  );
   s.scenes.forEach((item) =>
     add("plot", item.id, `シーン：${item.name}`, item.projectId, item.links),
   );
