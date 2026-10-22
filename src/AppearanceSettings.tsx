@@ -8,7 +8,7 @@ import {
   RotateCcw,
   Type,
 } from "lucide-react";
-import { dashboardSections } from "./appearance";
+import { dashboardSections, designPresets } from "./appearance";
 import type { Appearance, DashboardSection } from "./appearance";
 
 export default function AppearanceSettings({
@@ -63,6 +63,23 @@ export default function AppearanceSettings({
           表示設定を初期状態に戻す
         </button>
       </div>
+      <div className="design-gallery" aria-label="デザイン集">
+        <h3>デザインから選ぶ</h3>
+        <p>雰囲気をまとめて変更できます。文字サイズ・一覧・ホームの配置はそのままに、下で細かく調整できます。</p>
+        <div className="design-grid">
+          {designPresets.map((preset) => {
+            const selected = theme === preset.theme && value.accent === preset.accent && (value.background || "plain") === preset.background && (value.surface || "classic") === preset.surface && value.font === preset.font;
+            return <button key={preset.id} className={`design-preset ${selected ? "selected" : ""}`} aria-pressed={selected} onClick={() => {
+              onTheme(preset.theme);
+              onChange({ ...value, accent: preset.accent, background: preset.background, surface: preset.surface, font: preset.font });
+            }}>
+              <span className={`design-swatch swatch-${preset.id}`} aria-hidden="true"><i /><span><b /><b /><b /></span></span>
+              <span className="design-name">{preset.name}{selected && <Check size={15} />}</span>
+              <small>{preset.description}</small>
+            </button>;
+          })}
+        </div>
+      </div>
       <div className="appearance-columns">
         <div className="appearance-controls">
           <fieldset>
@@ -94,6 +111,9 @@ export default function AppearanceSettings({
                   ["blue", "ブルー"],
                   ["lavender", "ラベンダー"],
                   ["amber", "アンバー"],
+                  ["rose", "ローズ"],
+                  ["teal", "青緑"],
+                  ["silver", "シルバー"],
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -107,6 +127,14 @@ export default function AppearanceSettings({
                 </button>
               ))}
             </div>
+          </fieldset>
+          <fieldset>
+            <legend>背景の模様</legend>
+            <div className="choice-group">{([["plain", "無地"], ["glow", "やわらかな光"], ["paper", "紙の質感"], ["grid", "方眼"]] as const).map(([id, label]) => <button key={id} aria-pressed={(value.background || "plain") === id} className={(value.background || "plain") === id ? "selected" : ""} onClick={() => update("background", id)}>{label}</button>)}</div>
+          </fieldset>
+          <fieldset>
+            <legend>カードの仕上げ</legend>
+            <div className="choice-group">{([["classic", "クラシック"], ["soft", "やわらか"], ["outlined", "輪郭くっきり"]] as const).map(([id, label]) => <button key={id} aria-pressed={(value.surface || "classic") === id} className={(value.surface || "classic") === id ? "selected" : ""} onClick={() => update("surface", id)}>{label}</button>)}</div>
           </fieldset>
           <fieldset>
             <legend>文字サイズ</legend>

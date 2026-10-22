@@ -415,6 +415,8 @@ export default function App() {
     root.dataset.font = preferences.font;
     root.dataset.density = preferences.density;
     root.dataset.layout = preferences.layout;
+    root.dataset.background = preferences.background || "plain";
+    root.dataset.surface = preferences.surface || "classic";
     root.style.setProperty(
       "--text-scale",
       String({ small: 1, medium: 1.1, large: 1.25 }[preferences.fontSize]),

@@ -31,3 +31,19 @@ it("rejects invalid appearance settings without accepting unknown CSS or dashboa
     expect(() => validateBackup({ ...seed(), appearance: a })).toThrow();
   }
 });
+it("accepts older appearance backups and round-trips every new design without losing data", async () => {
+  const { designPresets } = await import("./appearance");
+  const old = defaultAppearance();
+  delete old.background;
+  delete old.surface;
+  expect(validAppearance(old)).toBe(true);
+  for (const preset of designPresets) {
+    const original = seed();
+    const appearance = { ...old, accent: preset.accent, background: preset.background, surface: preset.surface, font: preset.font };
+    const restored = validateBackup(JSON.parse(JSON.stringify({ ...original, theme: preset.theme, appearance })));
+    expect(restored.appearance).toEqual(appearance);
+    expect(restored.entries).toEqual(original.entries);
+  }
+  expect(validAppearance({ ...old, background: "url(unsafe)" })).toBe(false);
+  expect(validAppearance({ ...old, surface: "unknown" })).toBe(false);
+});
