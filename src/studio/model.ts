@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import type { Data, Entry, Kind, Project } from "../model";
 
 export interface Asset {
@@ -709,7 +710,7 @@ export function restoreRevision(data: Data, revision: Revision): Data {
         (relation) =>
           (relation.from !== entry.id && relation.to !== entry.id) ||
           (entry.kind === "character" &&
-            entry.projectId === relation.projectId),
+            sharedProjectIds(result, relation.projectId).has(entry.projectId)),
       ),
     };
   }

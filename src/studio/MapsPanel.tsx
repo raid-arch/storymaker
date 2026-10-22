@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useRef, useState } from "react";
 import { Minus, Plus, X } from "lucide-react";
 import Modal from "../Modal";
@@ -33,7 +34,9 @@ export default function MapsPanel({
   onOpen,
 }: StudioProps) {
   const s = studioOf(data),
-    maps = s.maps.filter((map) => map.projectId === projectId);
+    maps = s.maps.filter((map) =>
+      sharedProjectIds(data, projectId).has(map.projectId),
+    );
   const [mapId, setMapId] = useState(
     maps.find((map) => map.id === focusId)?.id || maps[0]?.id || "",
   );

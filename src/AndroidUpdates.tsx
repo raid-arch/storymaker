@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, RefreshCw } from "lucide-react";
+import Modal from "./Modal";
 import { AndroidApp } from "./native";
 import type { AndroidUpdate } from "./native";
 export default function AndroidUpdates({
@@ -11,6 +12,7 @@ export default function AndroidUpdates({
 }) {
   const [update, setUpdate] = useState<AndroidUpdate | null>(null),
     [busy, setBusy] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
   const last = useRef(0),
     checking = useRef(false);
   async function check(manual = false) {
@@ -25,6 +27,7 @@ export default function AndroidUpdates({
     try {
       const result = await AndroidApp.checkUpdate();
       setUpdate(result);
+      if (manual && result.available) setShowUpdate(true);
       if (manual)
         notice(
           result.available
@@ -79,13 +82,36 @@ export default function AndroidUpdates({
     }
   }
   return update?.available ? (
-    <section className="offline-banner" role="status">
-      <Download size={17} />
-      <span>新しいAPK {update.versionName} があります。</span>
-      <button disabled={busy} onClick={() => void install()}>
-        {busy ? "処理中…" : "APKを更新"}
-      </button>
-    </section>
+    <>
+      {showUpdate && (
+        <Modal label="APKの更新" onClose={() => setShowUpdate(false)}>
+          <h2>綴庭 {update.versionName} に更新</h2>
+          <p>
+            作品の保存後に更新します。Androidの確認画面で「更新」を選んでください。アンインストールは不要です。
+          </p>
+          <button
+            className="button primary"
+            disabled={busy || saveState !== "保存済み"}
+            onClick={() => void install()}
+          >
+            {busy ? "処理中…" : "APKを更新"}
+          </button>
+          <button
+            className="button subtle"
+            onClick={() => setShowUpdate(false)}
+          >
+            あとで
+          </button>
+        </Modal>
+      )}
+      <section className="offline-banner" role="status">
+        <Download size={17} />
+        <span>新しいAPK {update.versionName} があります。</span>
+        <button disabled={busy} onClick={() => void install()}>
+          {busy ? "処理中…" : "APKを更新"}
+        </button>
+      </section>
+    </>
   ) : busy ? (
     <div className="offline-banner">
       <RefreshCw size={16} />

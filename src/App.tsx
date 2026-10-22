@@ -48,6 +48,7 @@ import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { load, persist } from "./storage";
 import {
+  sharedProjectIds,
   deleteEntry,
   deleteProject,
   descendants,
@@ -181,11 +182,13 @@ function Badge({ status }: { status: string }) {
   );
 }
 function EntryCard({
+  source,
   entry,
   onOpen,
   onActions,
 }: {
   entry: Entry;
+  source: string;
   onOpen: () => void;
   onActions: () => void;
 }) {
@@ -215,6 +218,7 @@ function EntryCard({
               ? entry.fields.回収状況 || "未回収"
               : entry.category || kindLabels[entry.kind]}
         </span>
+        <small className="muted">{source}</small>
         <h3>{entry.name || "名前未設定"}</h3>
         <p>{entry.subtitle || entry.body || "まだ綴られていない設定"}</p>
         <div className="card-bottom">
@@ -535,7 +539,8 @@ export default function App() {
   function open(id: string) {
     const e = dataRef.current?.entries.find((x) => x.id === id);
     if (e) {
-      if (e.projectId !== projectId) setTimeSelection({ eraId: "" });
+      if (!sharedProjectIds(dataRef.current!, projectId).has(e.projectId))
+        setTimeSelection({ eraId: "" });
       else if (
         (timeSelection.eraId || timeSelection.year !== undefined) &&
         !readingData.entries.some((item) => item.id === id)
@@ -544,7 +549,8 @@ export default function App() {
         return;
       }
       setEntryId(id);
-      setProjectId(e.projectId);
+      if (!sharedProjectIds(dataRef.current!, projectId).has(e.projectId))
+        setProjectId(e.projectId);
       setSearch("");
       setView(e.kind);
       window.scrollTo({ top: 0 });
@@ -651,8 +657,9 @@ export default function App() {
   const readingData = dataAtTime(data, timeSelection);
   const historical =
     Boolean(timeSelection.eraId) || timeSelection.year !== undefined;
-  const projectEntries = readingData.entries.filter(
-    (e) => e.projectId === currentId,
+  const sharedIds = sharedProjectIds(data, currentId);
+  const projectEntries = readingData.entries.filter((e) =>
+    sharedIds.has(e.projectId),
   );
   const selected = readingData.entries.find((e) => e.id === entryId);
   const currentNav = nav.find((n) => n.id === view);
@@ -1024,6 +1031,54 @@ export default function App() {
               onManage={() => showStudio("eras")}
             />
           )}
+          {project && !selected && !["settings", "projects"].includes(view) && (
+            <section
+              className="panel"
+              style={{ padding: "1rem", marginBottom: "1rem" }}
+              aria-label="世界観と物語"
+            >
+              <strong>{projectCrumb(project)}</strong>
+              <p>
+                上位プロジェクトの設定は共通設定として表示されます。各物語の設定は、ほかの物語には表示されません。
+              </p>
+              {sharedIds.size > 1 && (
+                <p>
+                  共通設定：
+                  {
+                    projectEntries.filter((e) => e.projectId !== currentId)
+                      .length
+                  }
+                  件 ／ この物語の設定：
+                  {
+                    projectEntries.filter((e) => e.projectId === currentId)
+                      .length
+                  }
+                  件。共通設定の編集は、共有する物語すべてに反映されます。
+                </p>
+              )}
+              <button
+                className="button subtle"
+                onClick={() => {
+                  setProjectDraft({ ...newProject(), parentId: currentId });
+                  setProjectNew(true);
+                }}
+              >
+                <Plus size={16} />
+                この世界観に物語・章を追加
+              </button>
+              {data.projects
+                .filter((p) => p.parentId === currentId)
+                .map((p) => (
+                  <button
+                    className="button subtle"
+                    key={p.id}
+                    onClick={() => selectProject(p.id)}
+                  >
+                    {p.name}をひらく
+                  </button>
+                ))}
+            </section>
+          )}
           {search.trim() ? (
             <>
               <div className="page-title">
@@ -1067,6 +1122,7 @@ export default function App() {
                   <EntryCard
                     key={e.id}
                     entry={e}
+                    source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                     onOpen={() => open(e.id)}
                     onActions={() =>
                       setActionTarget({ kind: "entry", id: e.id })
@@ -1363,6 +1419,7 @@ export default function App() {
                             {recent.map((e) => (
                               <EntryCard
                                 entry={e}
+                                source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                                 key={e.id}
                                 onOpen={() => open(e.id)}
                                 onActions={() =>
@@ -1790,6 +1847,7 @@ export default function App() {
                             <EntryCard
                               key={e.id}
                               entry={e}
+                              source={`${e.projectId === currentId ? "この物語" : sharedIds.has(e.projectId) ? "共通設定" : "別のプロジェクト"}：${data.projects.find((p) => p.id === e.projectId)?.name || ""}`}
                               onOpen={() => open(e.id)}
                               onActions={() =>
                                 setActionTarget({ kind: "entry", id: e.id })
@@ -1824,7 +1882,9 @@ export default function App() {
                     <div>
                       <span className="eyebrow">A SHELF OF YOUR WORLDS</span>
                       <h1>プロジェクト</h1>
-                      <p>シリーズから一章まで、物語の居場所を整える。</p>
+                      <p>
+                        世界観を作り、その下に複数の物語・章を追加できます。上位の設定は共通で使えます。
+                      </p>
                     </div>
                     <button className="button primary" onClick={makeProject}>
                       <Plus size={16} />
@@ -2027,7 +2087,7 @@ export default function App() {
                         </h2>
                         <p>
                           {isAndroidApp
-                            ? "新しいAPKを確認します。更新が見つかったら、保存を確認して画面上部の「APKを更新」を押してください。Androidの確認画面から更新すると作品データを引き継ぎます。"
+                            ? "新しいAPKを確認します。更新が見つかったら、表示される確認画面の「APKを更新」を押してください。Androidの確認画面から更新すると作品データを引き継ぎます。"
                             : "新しい機能や修正を確認できます。更新が見つかったら、保存を確認してから画面上部の「更新する」を押してください。"}
                         </p>
                         <button
@@ -2403,6 +2463,34 @@ export default function App() {
             isNew={projectNew}
             onError={setNotice}
             onChange={(p) => {
+              if (!projectNew && p.parentId !== projectDraft.parentId) {
+                const candidate = {
+                  ...data,
+                  projects: data.projects.map((item) =>
+                    item.id === p.id ? p : item,
+                  ),
+                };
+                if (
+                  candidate.relations.some((relation) => {
+                    const scope = sharedProjectIds(
+                      candidate,
+                      relation.projectId,
+                    );
+                    return [relation.from, relation.to].some(
+                      (id) =>
+                        !scope.has(
+                          candidate.entries.find((entry) => entry.id === id)
+                            ?.projectId || "",
+                        ),
+                    );
+                  })
+                ) {
+                  setNotice(
+                    "共通人物との関係が共有範囲から外れます。先に人物関係を整理してから上位プロジェクトを変更してください。",
+                  );
+                  return;
+                }
+              }
               setProjectDraft(p);
               if (!projectNew)
                 change(

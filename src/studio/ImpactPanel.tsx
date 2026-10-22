@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import { impactOf } from "./analysis";
 import { EntrySelect, Empty } from "./ui";
@@ -11,7 +12,9 @@ export default function ImpactPanel({
 }: StudioProps) {
   const [id, setId] = useState(
     focusId ||
-      data.entries.find((entry) => entry.projectId === projectId)?.id ||
+      data.entries.find((entry) =>
+        sharedProjectIds(data, projectId).has(entry.projectId),
+      )?.id ||
       "",
   );
   const [depth, setDepth] = useState(2);

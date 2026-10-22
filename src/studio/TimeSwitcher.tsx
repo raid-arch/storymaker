@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import type { Data, Entry } from "../model";
 import { studioOf } from "./model";
@@ -17,7 +18,9 @@ export function TimeSwitcher({
   onManage: () => void;
 }) {
   const [custom, setCustom] = useState(false);
-  const eras = studioOf(data).eras.filter((era) => era.projectId === projectId);
+  const eras = studioOf(data).eras.filter((era) =>
+    sharedProjectIds(data, projectId).has(era.projectId),
+  );
   const active = Boolean(value.eraId) || value.year !== undefined;
   return (
     <section

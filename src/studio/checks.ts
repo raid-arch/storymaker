@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import type { Data } from "../model";
 import { studioOf } from "./model";
 import { knowledgeYear, numberOf, variantBounds } from "./time";
@@ -8,7 +9,9 @@ export interface Finding {
   entryIds: string[];
 }
 export function checkConsistency(data: Data, projectId: string): Finding[] {
-  const entries = data.entries.filter((entry) => entry.projectId === projectId);
+  const entries = data.entries.filter((entry) =>
+    sharedProjectIds(data, projectId).has(entry.projectId),
+  );
   const s = studioOf(data);
   const result: Finding[] = [];
   const add = (
@@ -100,7 +103,7 @@ export function checkConsistency(data: Data, projectId: string): Finding[] {
   }
   const parents = data.relations.filter(
     (relation) =>
-      relation.projectId === projectId &&
+      sharedProjectIds(data, projectId).has(relation.projectId) &&
       ["親子", "養子"].includes(relation.type),
   );
   const graph = new Map<string, string[]>();
@@ -185,8 +188,8 @@ export function checkConsistency(data: Data, projectId: string): Finding[] {
       `${name(id)}を含む親子・養子関係が循環しています。`,
       [id],
     );
-  for (const relation of data.relations.filter(
-    (r) => r.projectId === projectId,
+  for (const relation of data.relations.filter((r) =>
+    sharedProjectIds(data, projectId).has(r.projectId),
   ))
     if (
       relation.validFrom !== undefined &&
@@ -200,8 +203,8 @@ export function checkConsistency(data: Data, projectId: string): Finding[] {
         [relation.from, relation.to],
       );
   const events = new Map<string, string[]>();
-  for (const constraint of s.constraints.filter(
-    (item) => item.projectId === projectId,
+  for (const constraint of s.constraints.filter((item) =>
+    sharedProjectIds(data, projectId).has(item.projectId),
   )) {
     events.set(constraint.beforeId, [
       ...(events.get(constraint.beforeId) || []),
@@ -233,8 +236,8 @@ export function checkConsistency(data: Data, projectId: string): Finding[] {
       `${name(id)}を含む事件の前後条件が循環しています。`,
       [id],
     );
-  for (const item of s.knowledge.filter(
-    (item) => item.projectId === projectId,
+  for (const item of s.knowledge.filter((item) =>
+    sharedProjectIds(data, projectId).has(item.projectId),
   )) {
     const person = data.entries.find((entry) => entry.id === item.characterId),
       target = data.entries.find((entry) => entry.id === item.entryId);
@@ -257,7 +260,9 @@ export function checkConsistency(data: Data, projectId: string): Finding[] {
         [person.id, target.id],
       );
   }
-  const variants = s.variants.filter((item) => item.projectId === projectId);
+  const variants = s.variants.filter((item) =>
+    sharedProjectIds(data, projectId).has(item.projectId),
+  );
   for (let i = 0; i < variants.length; i++) {
     const a = variants[i],
       ab = variantBounds(a, s.eras);

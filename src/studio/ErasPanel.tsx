@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import Modal from "../Modal";
 import { ImageInput } from "../Editors";
@@ -31,8 +32,12 @@ export default function ErasPanel({
   notice,
 }: StudioProps) {
   const s = studioOf(data);
-  const eras = s.eras.filter((era) => era.projectId === projectId);
-  const variants = s.variants.filter((item) => item.projectId === projectId);
+  const eras = s.eras.filter((era) =>
+    sharedProjectIds(data, projectId).has(era.projectId),
+  );
+  const variants = s.variants.filter((item) =>
+    sharedProjectIds(data, projectId).has(item.projectId),
+  );
   const [era, setEra] = useState<Era | null>(
     s.eras.find((item) => item.id === focusId) || null,
   );
@@ -53,7 +58,9 @@ export default function ErasPanel({
   );
   const local = {
     ...data,
-    entries: data.entries.filter((entry) => entry.projectId === projectId),
+    entries: data.entries.filter((entry) =>
+      sharedProjectIds(data, projectId).has(entry.projectId),
+    ),
   };
   return (
     <section className="studio-section">

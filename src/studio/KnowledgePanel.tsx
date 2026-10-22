@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useEffect, useState } from "react";
 import Modal from "../Modal";
 import FreeTextInput from "../FreeTextInput";
@@ -19,7 +20,9 @@ export default function KnowledgePanel({
   const s = studioOf(data);
   const local = {
     ...data,
-    entries: data.entries.filter((e) => e.projectId === projectId),
+    entries: data.entries.filter((e) =>
+      sharedProjectIds(data, projectId).has(e.projectId),
+    ),
   };
   const [person, setPerson] = useState(
     data.entries.some((e) => e.id === focusId && e.kind === "character")
@@ -33,7 +36,8 @@ export default function KnowledgePanel({
   useEffect(() => setYear(selection?.year), [selection?.year]);
   const at = year === undefined ? null : knowledgeAt(data, year);
   const filter = (item: Knowledge) =>
-    item.projectId === projectId && (!person || item.characterId === person);
+    sharedProjectIds(data, projectId).has(item.projectId) &&
+    (!person || item.characterId === person);
   const items = (at?.known || s.knowledge)
     .filter(filter)
     .slice()

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Plus, X } from "lucide-react";
 import {
+  sharedProjectIds,
   isSyndrome,
   newEntry,
   syndromeCategory,
@@ -162,7 +163,7 @@ export function CharacterSyndromes({
   const candidates = data.entries.filter(
     (e) =>
       isSyndrome(e) &&
-      e.projectId === entry.projectId &&
+      sharedProjectIds(data, entry.projectId).has(e.projectId) &&
       !entry.links.includes(e.id) &&
       [e.name, ...syndromeDiseases(e)]
         .join(" ")

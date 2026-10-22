@@ -138,6 +138,18 @@ export function newProject(): Project {
     updatedAt: now(),
   };
 }
+/** Current project plus its ancestors; siblings and descendants stay private. */
+export function sharedProjectIds(data: Data, projectId: string): Set<string> {
+  const ids = new Set<string>();
+  let id = projectId;
+  while (id && !ids.has(id)) {
+    const project = data.projects.find((item) => item.id === id);
+    if (!project) break;
+    ids.add(id);
+    id = project.parentId;
+  }
+  return ids;
+}
 export function newEntry(projectId: string, kind: Kind): Entry {
   return {
     id: uid(),
@@ -176,16 +188,19 @@ export function emptyData(): Data {
   };
 }
 export function deleteEntry(data: Data, id: string): Data {
-  return cleanStudio({
-    ...data,
-    entries: data.entries
-      .filter((e) => e.id !== id)
-      .map((e) => ({ ...e, links: e.links.filter((l) => l !== id) })),
-    relations: data.relations.filter((r) => r.from !== id && r.to !== id),
-    positions: Object.fromEntries(
-      Object.entries(data.positions).filter(([key]) => key !== id),
-    ),
-  }, new Set([id]));
+  return cleanStudio(
+    {
+      ...data,
+      entries: data.entries
+        .filter((e) => e.id !== id)
+        .map((e) => ({ ...e, links: e.links.filter((l) => l !== id) })),
+      relations: data.relations.filter((r) => r.from !== id && r.to !== id),
+      positions: Object.fromEntries(
+        Object.entries(data.positions).filter(([key]) => key !== id),
+      ),
+    },
+    new Set([id]),
+  );
 }
 export function deleteProject(data: Data, id: string): Data {
   const ids = new Set([id]);
@@ -199,17 +214,21 @@ export function deleteProject(data: Data, id: string): Data {
   const removed = new Set(
     data.entries.filter((e) => ids.has(e.projectId)).map((e) => e.id),
   );
-  return cleanStudio({
-    ...data,
-    projects: data.projects.filter((p) => !ids.has(p.id)),
-    entries: data.entries
-      .filter((e) => !removed.has(e.id))
-      .map((e) => ({ ...e, links: e.links.filter((l) => !removed.has(l)) })),
-    relations: data.relations.filter((r) => !ids.has(r.projectId)),
-    positions: Object.fromEntries(
-      Object.entries(data.positions).filter(([key]) => !removed.has(key)),
-    ),
-  }, removed, ids);
+  return cleanStudio(
+    {
+      ...data,
+      projects: data.projects.filter((p) => !ids.has(p.id)),
+      entries: data.entries
+        .filter((e) => !removed.has(e.id))
+        .map((e) => ({ ...e, links: e.links.filter((l) => !removed.has(l)) })),
+      relations: data.relations.filter((r) => !ids.has(r.projectId)),
+      positions: Object.fromEntries(
+        Object.entries(data.positions).filter(([key]) => !removed.has(key)),
+      ),
+    },
+    removed,
+    ids,
+  );
 }
 export function descendants(data: Data, id: string): Set<string> {
   const ids = new Set([id]);
@@ -415,8 +434,8 @@ export function validateBackup(raw: unknown): Data {
       !to ||
       from.kind !== "character" ||
       to.kind !== "character" ||
-      from.projectId !== r.projectId ||
-      to.projectId !== r.projectId
+      !sharedProjectIds(d, r.projectId).has(from.projectId) ||
+      !sharedProjectIds(d, r.projectId).has(to.projectId)
     )
       return fail();
   }
@@ -446,10 +465,15 @@ export function validateBackup(raw: unknown): Data {
     )
   )
     return fail();
-  return d.studio === undefined ? d : { ...d, studio: validateStudio(d.studio) };
+  return d.studio === undefined
+    ? d
+    : { ...d, studio: validateStudio(d.studio) };
 }
 export function markdown(data: Data, projectId: string): string {
-  const ids = descendants(data, projectId),
+  const ids = new Set([
+      ...descendants(data, projectId),
+      ...sharedProjectIds(data, projectId),
+    ]),
     projects = data.projects.filter((p) => ids.has(p.id)),
     entries = data.entries.filter((e) => ids.has(e.projectId));
   const safe = (s: string) => s.replace(/([\\`*_{}\[\]<>])/g, "\\$1");

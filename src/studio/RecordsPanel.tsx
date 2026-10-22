@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import Modal from "../Modal";
 import { ImageInput, TagsInput } from "../Editors";
@@ -48,7 +49,7 @@ export default function RecordsPanel({
   const items = (isTerm ? s.terms : s.references)
     .filter(
       (item) =>
-        item.projectId === projectId &&
+        sharedProjectIds(data, projectId).has(item.projectId) &&
         (!category || item.category === category) &&
         JSON.stringify(item)
           .toLocaleLowerCase()
@@ -64,7 +65,7 @@ export default function RecordsPanel({
   const categories = [
     ...new Set(
       (isTerm ? s.terms : s.references)
-        .filter((item) => item.projectId === projectId)
+        .filter((item) => sharedProjectIds(data, projectId).has(item.projectId))
         .map((item) => item.category)
         .filter(Boolean),
     ),

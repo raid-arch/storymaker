@@ -1,11 +1,15 @@
-import { familyGenerations } from "../model";
+import { familyGenerations, sharedProjectIds } from "../model";
 import type { Data } from "../model";
 /** Stable layered placement; coordinates never alter people or blood relations. */
 export function familyLayout(data: Data, projectId: string): Data["positions"] {
   const people = data.entries.filter(
-    (e) => e.projectId === projectId && e.kind === "character",
+    (e) =>
+      sharedProjectIds(data, projectId).has(e.projectId) &&
+      e.kind === "character",
   );
-  const relations = data.relations.filter((r) => r.projectId === projectId);
+  const relations = data.relations.filter((r) =>
+    sharedProjectIds(data, projectId).has(r.projectId),
+  );
   const generations = familyGenerations(people, relations);
   const levels = [...new Set(Object.values(generations))].sort((a, b) => a - b);
   const rows = levels.map((level) =>

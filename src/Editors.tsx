@@ -9,6 +9,7 @@ import {
   Link2,
 } from "lucide-react";
 import {
+  sharedProjectIds,
   descendants,
   kindLabels,
   statusOptions,
@@ -186,6 +187,7 @@ export function ProjectForm({
             value={value.type}
             onChange={(type) => onChange({ ...value, type })}
             suggestions={uniqueOptions([
+              "世界観",
               "シリーズ",
               "作品",
               "章",
@@ -212,6 +214,9 @@ export function ProjectForm({
           </select>
         </label>
       </div>
+      <p className="muted">
+        上位の設定を共通で表示します。同じ世界の物語は、同じ上位プロジェクトを選んでください。
+      </p>
       <label>
         説明
         <textarea
@@ -339,6 +344,32 @@ export function EntryEditor({
           削除
         </button>
       </div>
+      <section
+        className="panel"
+        style={{ padding: "1rem", marginBottom: "1rem" }}
+      >
+        <label>
+          設定の保存先（共有範囲）
+          <select
+            aria-label="設定の保存先（共有範囲）"
+            value={entry.projectId}
+            onChange={(event) =>
+              onChange({ ...entry, projectId: event.target.value })
+            }
+          >
+            {data.projects
+              .filter((p) => sharedProjectIds(data, entry.projectId).has(p.id))
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+          </select>
+        </label>
+        <p>
+          保存先と、その下にある物語で共有されます。共通設定にしたい場合は上位の世界観を選んでください。編集内容は共有先にも反映されます。
+        </p>
+      </section>
       <div className="editor-layout">
         <div className="editor-main">
           <section className="panel editor-section">

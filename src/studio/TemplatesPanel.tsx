@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import Modal from "../Modal";
 import { TagsInput } from "../Editors";
@@ -33,7 +34,8 @@ export default function TemplatesPanel({
     [target, setTarget] = useState(""),
     [name, setName] = useState("");
   const items = s.templates.filter(
-    (item) => !item.projectId || item.projectId === projectId,
+    (item) =>
+      !item.projectId || sharedProjectIds(data, projectId).has(item.projectId),
   );
   const newTemplate = () =>
     setDraft({
@@ -320,7 +322,9 @@ export default function TemplatesPanel({
             <EntrySelect
               data={{
                 ...data,
-                entries: data.entries.filter((e) => e.projectId === projectId),
+                entries: data.entries.filter((e) =>
+                  sharedProjectIds(data, projectId).has(e.projectId),
+                ),
               }}
               kind={applying.kind}
               value={target}

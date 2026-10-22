@@ -1,3 +1,4 @@
+import { sharedProjectIds } from "../model";
 import { useState } from "react";
 import {
   checkpoint,
@@ -27,7 +28,8 @@ export default function HistoryPanel({
   const records = s.revisions
     .filter(
       (revision) =>
-        (!projectId || revision.projectId === projectId) &&
+        (!projectId ||
+          sharedProjectIds(data, projectId).has(revision.projectId)) &&
         (!target || `${revision.target}:${revision.targetId}` === target),
     )
     .slice()
@@ -43,7 +45,9 @@ export default function HistoryPanel({
       options.set(`project:${p.id}`, `作品：${p.name || "名前未設定"}`),
     );
   data.entries
-    .filter((e) => !projectId || e.projectId === projectId)
+    .filter(
+      (e) => !projectId || sharedProjectIds(data, projectId).has(e.projectId),
+    )
     .forEach((e) => options.set(`entry:${e.id}`, e.name || "名前未設定"));
   records.forEach((item) => {
     const key = `${item.target}:${item.targetId}`;

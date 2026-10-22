@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import FreeTextInput from "./FreeTextInput";
 import { Plus, Minus, Move, RotateCcw, X, Trash2 } from "lucide-react";
 import {
+  sharedProjectIds,
   familyGenerations,
   relationTypes,
   fieldOptions,
@@ -25,7 +26,9 @@ export function RelationForm({
   onRemove: (id: string) => void;
 }) {
   const chars = data.entries.filter(
-    (e) => e.projectId === projectId && e.kind === "character",
+    (e) =>
+      sharedProjectIds(data, projectId).has(e.projectId) &&
+      e.kind === "character",
   );
   const [from, setFrom] = useState(initialFrom || chars[0]?.id || "");
   const [to, setTo] = useState("");
@@ -208,7 +211,7 @@ export function RelationForm({
       <h3 className="space-top">登録済みの関係</h3>
       <div className="relations-list">
         {data.relations
-          .filter((r) => r.projectId === projectId)
+          .filter((r) => sharedProjectIds(data, projectId).has(r.projectId))
           .map((r) => (
             <div className="relation-item" key={r.id}>
               <div>
@@ -264,20 +267,24 @@ export function FamilyGraph({
     moved: boolean;
   } | null>(null);
   const all = data.entries.filter(
-    (e) => e.projectId === projectId && e.kind === "character",
+    (e) =>
+      sharedProjectIds(data, projectId).has(e.projectId) &&
+      e.kind === "character",
   );
   const chars = all.filter(
     (e) => filter === "すべて" || (e.fields.系統 || "").trim() === filter,
   );
   const relations = data.relations.filter(
     (r) =>
-      r.projectId === projectId &&
+      sharedProjectIds(data, projectId).has(r.projectId) &&
       chars.some((e) => e.id === r.from) &&
       chars.some((e) => e.id === r.to),
   );
   const generations = familyGenerations(
     all,
-    data.relations.filter((r) => r.projectId === projectId),
+    data.relations.filter((r) =>
+      sharedProjectIds(data, projectId).has(r.projectId),
+    ),
   );
   const sortedLevels = [...new Set(Object.values(generations))].sort(
     (a, b) => a - b,
