@@ -57,37 +57,49 @@ export default function SceneTimelineGraph({
   return (
     <section className="scene-time-graph" aria-label="世界と物語の時間軸グラフ">
       <h3>世界と物語を並べて見る</h3>
-      <div className="creation-field-grid">
-        <label>
-          グラフの章
-          <select value={chapter} onChange={(e) => setChapter(e.target.value)}>
-            <option value="">すべての章</option>
-            {studio.columns
-              .filter((c) => c.projectId === projectId)
-              .map((c) => (
-                <option value={c.id} key={c.id}>
-                  {c.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label>
-          グラフの人物
-          <select value={person} onChange={(e) => setPerson(e.target.value)}>
-            <option value="">すべての人物</option>
-            {data.entries
-              .filter((e) => e.kind === "character" && scope.has(e.projectId))
-              .map((e) => (
-                <option value={e.id} key={e.id}>
-                  {e.name}
-                </option>
-              ))}
-          </select>
-        </label>
-      </div>
-      <p className="muted">
-        上から過去→未来。同じ年は横に並びます。年の間隔は均等で、年代未定は最後に分けます。「翌朝」などの表記から年代を推測しません。
+      <details className="time-graph-options">
+        <summary>章・人物で絞り込む</summary>
+        <div className="creation-field-grid">
+          <label>
+            グラフの章
+            <select
+              value={chapter}
+              onChange={(e) => setChapter(e.target.value)}
+            >
+              <option value="">すべての章</option>
+              {studio.columns
+                .filter((c) => c.projectId === projectId)
+                .map((c) => (
+                  <option value={c.id} key={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            グラフの人物
+            <select value={person} onChange={(e) => setPerson(e.target.value)}>
+              <option value="">すべての人物</option>
+              {data.entries
+                .filter((e) => e.kind === "character" && scope.has(e.projectId))
+                .map((e) => (
+                  <option value={e.id} key={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+      </details>
+      <p className="muted time-graph-caption">
+        過去 ↓ 未来 · 同じ年を横並びに表示
       </p>
+      <details className="time-graph-options">
+        <summary>グラフの見方</summary>
+        <p className="muted">
+          上から過去→未来。同じ年は横に並びます。年の間隔は均等で、年代未定は最後に分けます。「翌朝」などの表記から年代を推測しません。
+        </p>
+      </details>
       <div className="time-graph-heading">
         <span>共通年</span>
         <strong>世界の出来事</strong>

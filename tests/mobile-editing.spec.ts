@@ -108,7 +108,10 @@ test("mobile can open a separate character editor or keep the inline view; time 
   await expect(row).toContainText("細かな場面");
   await expect(page.locator(".time-graph-row").first()).toContainText("-20年");
   await expect(page.locator(".time-unknown")).toContainText("未定の場面");
-  await graph.screenshot({path:`/tmp/storymaker-time-graph-${test.info().project.name}.png`});
+  await graph.screenshot({
+    path: `/tmp/storymaker-time-graph-${test.info().project.name}.png`,
+  });
+  await graph.getByText("章・人物で絞り込む", { exact: true }).click();
   await graph.getByLabel("グラフの人物").selectOption("p19");
   await expect(graph).not.toContainText("未定の場面");
   await graph.getByRole("button", { name: /細かな場面/ }).click();

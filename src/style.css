@@ -5089,3 +5089,6 @@ kbd {
  .time-graph-year { font-size:10px; }
 }
 .editor-list-pane,.editor-detail-pane { scroll-margin-top:100px; }
+.time-graph-options > summary { color:var(--muted); font-size:12px; padding:10px 0; min-height:40px; cursor:pointer; }
+.time-graph-options .creation-field-grid { margin-top:12px; }
+.time-graph-caption { font-size:12px; margin:14px 0 0; }
