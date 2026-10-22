@@ -32,6 +32,7 @@ import { storyManuscript } from "./studio/creation";
 import { moveScene } from "./studio/plot";
 import type { Confirm, Mutation } from "./studio/ui";
 import Modal from "./Modal";
+import SettingGenrePicker, { matchesSettingGenre } from "./SettingGenrePicker";
 import FreeTextInput from "./FreeTextInput";
 import BaseWritingField from "./WritingField";
 import type { ComponentProps } from "react";
@@ -138,7 +139,8 @@ function StoryMaker({
   }, [projectId, sceneId]);
   const [chronological, setChronological] = useState(false);
   const [personQuery, setPersonQuery] = useState(""),
-    [referenceQuery, setReferenceQuery] = useState("");
+    [referenceQuery, setReferenceQuery] = useState(""),
+    [referenceGenre, setReferenceGenre] = useState("");
   const scene = scenes.find((item) => item.id === sceneId);
   const cast = scene ? sceneCast(scene, data.entries) : [];
   const people = entries.filter((entry) => entry.kind === "character");
@@ -947,6 +949,7 @@ function StoryMaker({
         <div className="creation-layout">
           <aside className="panel creation-index">
             <h2>使える設定資料</h2>
+            <SettingGenrePicker entries={entries.filter((e) => e.kind !== "character")} categories={categoryOptions(data)} value={referenceGenre} onChange={setReferenceGenre} label="参照資料のジャンル" />
             <label>
               資料を絞り込む
               <input
@@ -959,6 +962,7 @@ function StoryMaker({
               .filter(
                 (e) =>
                   e.kind !== "character" &&
+                  matchesSettingGenre(e, referenceGenre) &&
                   `${e.name} ${e.category} ${e.tags.join(" ")}`
                     .toLocaleLowerCase()
                     .includes(referenceQuery.trim().toLocaleLowerCase()),
@@ -1266,6 +1270,7 @@ function WorldBuilder({
       }
     }),
     [query, setQuery] = useState(""),
+    [genre, setGenre] = useState(""),
     [name, setName] = useState(""),
     [kind, setKind] = useState<Kind>("world"),
     [category, setCategory] = useState("国家・地域");
@@ -1321,6 +1326,14 @@ function WorldBuilder({
       </header>
       <div className="creation-layout">
         <aside className="panel creation-index">
+          <SettingGenrePicker entries={entries} categories={categoryOptions(data)} value={genre} label="世界観の設定ジャンル" onChange={(next) => {
+            setGenre(next);
+            if (next.startsWith("world:")) { setKind("world"); setCategory(next.slice(6)); }
+            else if (next.startsWith("kind:")) { setKind(next.slice(5) as Kind); setCategory(""); }
+          }} onAdd={(name) => {
+            change((d) => ({ ...d, categories: [...new Set([...d.categories, name])] }));
+            setGenre(`world:${name}`); setKind("world"); setCategory(name);
+          }} />
           <form
             className="creation-new-setting"
             onSubmit={(e) => {
@@ -1333,6 +1346,8 @@ function WorldBuilder({
               };
               change((d) => ({ ...d, entries: [...d.entries, entry] }));
               setSelectedId(entry.id);
+              setGenre(entry.kind === "world" ? `world:${entry.category || "未分類"}` : `kind:${entry.kind}`);
+              setQuery("");
               setName("");
             }}
           >
@@ -1400,8 +1415,9 @@ function WorldBuilder({
               onChange={(e) => setQuery(text(e))}
             />
           </label>
+          {!entries.some((e) => matchesSettingGenre(e, genre) && `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())) && <p className="muted">このジャンル・検索条件の設定はまだありません。上の作成欄から追加できます。</p>}
           {entries
-            .filter((e) => `${e.name} ${e.category} ${e.body}`.includes(query))
+            .filter((e) => matchesSettingGenre(e, genre) && `${e.name} ${e.category} ${e.tags.join(" ")} ${e.body}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
             .map((entry) => (
               <button
                 className="creation-scene-link"

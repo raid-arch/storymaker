@@ -1,5 +1,6 @@
 import TimelineBoard from "./TimelineBoard";
 import ProjectTree from "./ProjectTree";
+import SettingGenrePicker from "./SettingGenrePicker";
 import { moveOnShelf, shelfSources } from "./collections";
 import { AndroidApp, isAndroidApp, saveTextFile } from "./native";
 import AndroidUpdates from "./AndroidUpdates";
@@ -284,8 +285,6 @@ export default function App() {
   const [relationInitialId, setRelationInitialId] = useState<
     string | undefined
   >();
-  const [categoryDraft, setCategoryDraft] = useState(""),
-    [categoryOpen, setCategoryOpen] = useState(false);
   const [notice, setNotice] = useState(""),
     [confirm, setConfirm] = useState<{
       title: string;
@@ -807,7 +806,7 @@ export default function App() {
     "",
   ).filter(
     (e) =>
-      (category === "すべて" || e.category.trim() === category) &&
+      (category === "すべて" || (e.category.trim() || "未分類") === category) &&
       (statusFilter === "すべて" || e.status.trim() === statusFilter) &&
       (clueFilter === "すべて" ||
         (e.fields.回収状況 || "").trim() === clueFilter),
@@ -1813,36 +1812,10 @@ export default function App() {
                   ) : (
                     <>
                       {view === "world" && (
-                        <div className="category-bar">
-                          <button
-                            className={category === "すべて" ? "active" : ""}
-                            onClick={() => setCategory("すべて")}
-                          >
-                            すべて
-                            <span>
-                              {
-                                projectEntries.filter((e) => e.kind === "world")
-                                  .length
-                              }
-                            </span>
-                          </button>
-                          {categoryOptions(data).map((c) => (
-                            <button
-                              key={c}
-                              className={category === c ? "active" : ""}
-                              onClick={() => setCategory(c)}
-                            >
-                              {c}
-                            </button>
-                          ))}
-                          <button
-                            className="category-add"
-                            onClick={() => setCategoryOpen(true)}
-                          >
-                            <Plus size={14} />
-                            カテゴリ
-                          </button>
-                        </div>
+                        <SettingGenrePicker entries={projectEntries.filter((e) => e.kind === "world")} categories={categoryOptions(data)} value={category === "すべて" ? "" : `world:${category}`} label="設定のジャンル" kinds={false} onChange={(next) => setCategory(next ? next.slice(6) : "すべて")} onAdd={(name) => {
+                          change((d) => ({ ...d, categories: [...new Set([...d.categories, name])] }));
+                          setCategory(name);
+                        }} addLabel="カテゴリ" />
                       )}
                       <div className="list-toolbar">
                         <span className="muted small">
@@ -2760,50 +2733,6 @@ export default function App() {
               })
             }
           />
-        </Modal>
-      )}
-      {categoryOpen && (
-        <Modal onClose={() => setCategoryOpen(false)}>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const c = categoryDraft.trim();
-              if (!c) return;
-              if (categoryOptions(data).includes(c)) {
-                setNotice("同じカテゴリが存在します。");
-                return;
-              }
-              change((d) => ({ ...d, categories: [...d.categories, c] }));
-              setCategory(c);
-              setCategoryDraft("");
-              setCategoryOpen(false);
-            }}
-          >
-            <div className="modal-heading">
-              <h2>カテゴリを追加</h2>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label="閉じる"
-                onClick={() => setCategoryOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <label>
-              カテゴリ名
-              <input
-                required
-                autoFocus
-                placeholder="例：言語・文字"
-                value={categoryDraft}
-                onChange={(e) => setCategoryDraft(e.target.value)}
-              />
-            </label>
-            <button className="button primary full" type="submit">
-              追加
-            </button>
-          </form>
         </Modal>
       )}
       {confirm && (

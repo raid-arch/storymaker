@@ -129,8 +129,8 @@ test("world categories, tags and full-text truth search", async ({ page }) => {
   await page.goto("./");
   await nav(page, "世界観データベース");
   await page.getByRole("button", { name: "カテゴリ", exact: true }).click();
-  await page.getByLabel("カテゴリ名").fill("言語・文字");
-  await page.getByRole("button", { name: "追加", exact: true }).click();
+  await page.getByLabel("ジャンル名").fill("言語・文字");
+  await page.getByRole("button", { name: "追加して選ぶ", exact: true }).click();
   await page.getByRole("button", { name: "設定を追加", exact: true }).click();
   await page
     .getByRole("dialog")

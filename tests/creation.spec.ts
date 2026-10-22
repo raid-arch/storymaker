@@ -275,3 +275,40 @@ test("story character roles stay separate from the base and world builder suppor
     ),
   ).toBe(true);
 });
+
+test("settings can be browsed by genre, custom genres are reusable, and story references use the same classification", async ({ page }) => {
+  await page.goto("./");
+  await workspace(page);
+  await page.getByRole("button", { name: "舞台・設定資料", exact: true }).click();
+  await page.getByLabel("参照資料のジャンル", { exact: true }).selectOption("world:都市・建築物");
+  await expect(page.locator(".creation-index .creation-scene-link")).toHaveCount(1);
+  await expect(page.locator(".creation-index .creation-scene-link")).toContainText("共有の街");
+  await page.getByLabel("参照資料のジャンル", { exact: true }).selectOption("kind:event");
+  await expect(page.locator(".creation-index .creation-scene-link")).toContainText("世界全体の大戦争");
+  await menu(page); await page.locator(".project-switch").click();
+  await page.locator(".project-menu").getByRole("button", { name: "共通世界資料", exact: true }).click();
+  const genre = page.getByLabel("世界観の設定ジャンル", { exact: true });
+  await genre.selectOption("kind:character");
+  await expect(page.locator(".creation-index .creation-scene-link")).toHaveCount(2);
+  await expect(page.getByLabel("世界観で作成する設定の種類")).toHaveValue("character");
+  await page.getByRole("button", { name: "ジャンルを追加", exact: true }).click();
+  await page.getByLabel("ジャンル名", { exact: true }).fill("生物・生態系");
+  await page.getByRole("button", { name: "追加して選ぶ", exact: true }).click();
+  await expect(genre).toHaveValue("world:生物・生態系");
+  await expect(page.getByLabel("世界観制作のカテゴリ", { exact: true })).toHaveValue("生物・生態系");
+  await page.getByLabel("世界観で作成する設定の名前").fill("架空の渡り鳥");
+  await page.getByRole("button", { name: "設定を作成", exact: true }).click();
+  await page.getByLabel("世界観の設定本文", { exact: true }).fill("季節に合わせて渡る。");
+  await expect(page.locator(".creation-index .creation-scene-link")).toHaveCount(1);
+  await page.getByLabel("制作画面で資料を探す").fill("存在しない検索");
+  await expect(page.locator(".creation-index .creation-scene-link")).toHaveCount(0);
+  await expect(page.getByText(/このジャンル・検索条件の設定はまだありません/)).toBeVisible();
+  await page.getByLabel("制作画面で資料を探す").fill("");
+  await save(page); await page.reload();
+  await genre.selectOption("world:生物・生態系");
+  await expect(page.locator(".creation-index .creation-scene-link")).toContainText("架空の渡り鳥");
+  await expect(genre.locator('option[value="world:生物・生態系"]')).toContainText("1件");
+  await page.getByRole("button", { name: "絞り込みを解除", exact: true }).click();
+  await expect(page.locator(".creation-index .creation-scene-link")).toHaveCount(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

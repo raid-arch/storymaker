@@ -165,7 +165,7 @@ test("world archive can create syndromes, remove illnesses, search them, and exp
   await page.getByLabel("構成する病気2", { exact: true }).fill("病気丁");
   await saved(page);
   await page.getByRole("button", { name: "一覧へ戻る" }).click();
-  await page.getByRole("button", { name: "症候群", exact: true }).click();
+  await page.getByLabel("設定のジャンル", { exact: true }).selectOption("world:症候群");
   await expect(page.locator(".entry-card")).toHaveCount(1);
   await page
     .getByRole("textbox", { name: "すべての設定を検索" })

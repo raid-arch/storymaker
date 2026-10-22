@@ -4709,3 +4709,10 @@ kbd {
 .shelf-open { padding:0; }
 .shelf-root-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
 @media(max-width:720px) { .shelf-root-actions { grid-template-columns:1fr; } }
+.setting-genre-picker { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:16px 0; padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
+.setting-genre-picker > label { display:grid; gap:8px; flex:1 1 220px; min-width:0; color:var(--heading); font-size:13px; }
+.setting-genre-picker select { width:100%; min-width:0; min-height:var(--action-height,44px); text-overflow:ellipsis; }
+.creation-index .setting-genre-picker { padding:0 0 18px; border:0; border-bottom:1px solid var(--line); border-radius:0; margin:0 0 18px; }
+.creation-index .setting-genre-picker > label { flex-basis:100%; }
+.creation-index .setting-genre-picker > .button { width:100%; }
+@media(max-width:480px) { .setting-genre-picker > label { flex-basis:100%; } .setting-genre-picker > .button { flex:1; } }
