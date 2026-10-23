@@ -49,9 +49,22 @@ test("create independent world library and a story referencing it without parent
   await expect(page.locator(".workspace-scope-strip")).toContainText(
     "独立した世界資料 の設定に準拠",
   );
-  await page
-    .getByRole("button", { name: "親を選ぶ・変更", exact: true })
-    .click();
+  if (
+    await page
+      .getByRole("button", { name: "親を選ぶ・変更", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "親を選ぶ・変更", exact: true })
+      .click();
+  else {
+    await page
+      .getByRole("button", { name: "親の世界観・関連資料を開く", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "親の選択・変更", exact: true })
+      .click();
+  }
   await page.getByLabel("親の世界観", { exact: true }).selectOption("");
   await page.getByRole("button", { name: "完了", exact: true }).click();
   await expect(page.locator(".workspace-scope-strip")).toContainText(

@@ -1,3 +1,4 @@
+import useMobileViewport from "./useMobileViewport";
 import TrashPanel from "./TrashPanel";
 import { moveToTrash, restoreFromTrash, permanentlyDelete } from "./trash";
 import TimelineBoard from "./TimelineBoard";
@@ -257,6 +258,7 @@ function EntryCard({
   );
 }
 export default function App() {
+  useMobileViewport();
   const [data, setData] = useState<Data | null>(null),
     [loadError, setLoadError] = useState("");
   const dataRef = useRef<Data | null>(null);
@@ -311,6 +313,8 @@ export default function App() {
     [timelineScope, setTimelineScope] = useState(""),
     [clueFilter, setClueFilter] = useState("すべて");
   const [creationSceneId, setCreationSceneId] = useState("");
+  const [sectionRequest, setSectionRequest] = useState(0);
+  const [activeCreationTab, setActiveCreationTab] = useState("");
   const [creationSection, setCreationSection] = useState("");
   const [focusedWorldEntryId, setFocusedWorldEntryId] = useState("");
   const [relationInitialId, setRelationInitialId] = useState<
@@ -691,6 +695,7 @@ export default function App() {
     setProjectId(id);
     setCreationSceneId("");
     setCreationSection("");
+    setSectionRequest((n) => n + 1);
     navigate("creation");
     setProjectMenu(false);
   }
@@ -1087,6 +1092,40 @@ export default function App() {
                 <FolderOpen size={18} />
                 <span>プロジェクトを選び直す</span>
               </button>
+              <div className="mobile-workspace-shortcuts">
+                {project && !isWorldLibrary(project) && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setCreationSection("timeline");
+                        setSectionRequest((n) => n + 1);
+                        setCreationSceneId("");
+                        navigate("creation");
+                      }}
+                    >
+                      時間軸グラフを開く
+                    </button>
+                    <button
+                      onClick={() => {
+                        setCreationSection("planning");
+                        setSectionRequest((n) => n + 1);
+                        setCreationSceneId("");
+                        navigate("creation");
+                      }}
+                    >
+                      プロット設計を開く
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    setMobileMenu(false);
+                    toggleContext();
+                  }}
+                >
+                  親の世界観・関連資料を見る
+                </button>
+              </div>
               <div className="workspace-nav-caption">
                 {project && isWorldLibrary(project)
                   ? "世界観の編集"
@@ -1407,11 +1446,13 @@ export default function App() {
                   } else {
                     navigate("creation");
                     setCreationSection("cast");
+                    setSectionRequest((n) => n + 1);
                   }
                 }}
                 onSettings={() => {
                   navigate("creation");
                   setCreationSection("references");
+                  setSectionRequest((n) => n + 1);
                 }}
                 onTime={() => navigate("event")}
                 onContext={() => setInspectorOpen(true)}
@@ -1721,7 +1762,7 @@ export default function App() {
                       }
                     >
                       <CreationWorkspace
-                        key={`${currentId}:${creationSceneId}:${creationSection}`}
+                        key={`${currentId}:${creationSceneId}`}
                         data={data}
                         projectId={currentId}
                         saveState={saveState}
@@ -1732,6 +1773,8 @@ export default function App() {
                         initialSceneId={creationSceneId}
                         initialSection={creationSection}
                         onSelectionChange={setFocusedWorldEntryId}
+                        onWorkbenchTab={setActiveCreationTab}
+                        sectionRequest={sectionRequest}
                         onOverview={() => navigate("dashboard")}
                         onStartStory={() => {
                           setProjectDraft({
@@ -2874,7 +2917,10 @@ export default function App() {
                   open(id);
                   setInspectorOpen(false);
                 }}
-                onParent={() => editProject(project)}
+                onParent={() => {
+                  setInspectorOpen(false);
+                  editProject(project);
+                }}
                 onOverview={() => {
                   navigate("dashboard");
                   setInspectorOpen(false);
@@ -2902,15 +2948,25 @@ export default function App() {
               onClick={() => {
                 setSession("picker");
                 setInspectorOpen(false);
+                setMobileMenu(false);
               }}
             >
               <FolderOpen size={21} />
               <span>プロジェクト</span>
             </button>
             <button
-              className={!inspectorOpen && !mobileMenu ? "active" : ""}
+              className={
+                view === "creation" &&
+                !mobileMenu &&
+                !inspectorOpen &&
+                !["cast", "references"].includes(activeCreationTab)
+                  ? "active"
+                  : ""
+              }
               onClick={() => {
-                setMobileProjectHome(false);
+                setCreationSection("scenes");
+                setSectionRequest((n) => n + 1);
+                setCreationSceneId("");
                 setInspectorOpen(false);
                 navigate("creation");
               }}
@@ -2919,11 +2975,46 @@ export default function App() {
               <span>編集</span>
             </button>
             <button
-              className={inspectorOpen ? "active" : ""}
-              onClick={toggleContext}
+              className={
+                view === "character" ||
+                (view === "creation" && activeCreationTab === "cast")
+                  ? "active"
+                  : ""
+              }
+              onClick={() => {
+                setInspectorOpen(false);
+                if (project && isWorldLibrary(project)) navigate("character");
+                else {
+                  setCreationSceneId("");
+                  setCreationSection("cast");
+                  setSectionRequest((n) => n + 1);
+                  navigate("creation");
+                }
+              }}
             >
-              <Link2 size={21} />
-              <span>関連資料</span>
+              <Users size={21} />
+              <span>人物</span>
+            </button>
+            <button
+              className={
+                view === "world" ||
+                (view === "creation" && activeCreationTab === "references")
+                  ? "active"
+                  : ""
+              }
+              onClick={() => {
+                setInspectorOpen(false);
+                if (project && isWorldLibrary(project)) navigate("world");
+                else {
+                  setCreationSceneId("");
+                  setCreationSection("references");
+                  setSectionRequest((n) => n + 1);
+                  navigate("creation");
+                }
+              }}
+            >
+              <BookOpen size={21} />
+              <span>資料</span>
             </button>
             <button
               className={mobileMenu ? "active" : ""}

@@ -1,6 +1,5 @@
 import { Children, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-/** Desktop keeps both panes; small screens can open a dedicated detail page. */
 export default function EditorSplit({
   children,
   mode,
@@ -14,13 +13,45 @@ export default function EditorSplit({
   label: string;
   initialDetail?: boolean;
 }) {
-  const [detail, setDetail] = useState(initialDetail);
-  const previous = useRef(selection);
+  const [detail, setDetail] = useState(initialDetail),
+    previous = useRef(selection),
+    listScroll = useRef(0),
+    detailPane = useRef<HTMLDivElement>(null);
+  const mobile = () =>
+    mode !== "inline" && window.matchMedia("(max-width:720px)").matches;
+  const back = () => {
+    setDetail(false);
+    if (mobile())
+      requestAnimationFrame(() =>
+        window.scrollTo({ top: listScroll.current, behavior: "instant" }),
+      );
+  };
   useEffect(() => {
     if (!selection) setDetail(false);
     else if (previous.current !== selection) setDetail(true);
     previous.current = selection;
   }, [selection]);
+  useEffect(() => {
+    if (detail && selection && mobile())
+      requestAnimationFrame(() =>
+        detailPane.current?.scrollIntoView({ block: "start" }),
+      );
+  }, [detail, selection, mode]);
+  useEffect(() => {
+    const handle = (event: Event) => {
+      if (
+        !detail ||
+        !selection ||
+        !mobile() ||
+        document.querySelector('[role="dialog"],dialog[open]')
+      )
+        return;
+      event.stopImmediatePropagation();
+      back();
+    };
+    window.addEventListener("native-back", handle, true);
+    return () => window.removeEventListener("native-back", handle, true);
+  }, [detail, selection, mode]);
   const panes = Children.toArray(children);
   return (
     <div
@@ -34,27 +65,19 @@ export default function EditorSplit({
               ".creation-person,.creation-scene-link",
             )
           ) {
+            listScroll.current = scrollY;
             setDetail(true);
-            if (
-              mode !== "inline" &&
-              window.matchMedia("(max-width:720px)").matches
-            )
-              requestAnimationFrame(() =>
-                document
-                  .querySelector(".editor-detail-pane")
-                  ?.scrollIntoView({ block: "start" }),
-              );
           }
         }}
-        onSubmit={() => setDetail(true)}
+        onSubmit={() => {
+          listScroll.current = scrollY;
+          setDetail(true);
+        }}
       >
         {panes[0]}
       </div>
-      <div className="editor-detail-pane">
-        <button
-          className="button subtle editor-list-back"
-          onClick={() => setDetail(false)}
-        >
+      <div className="editor-detail-pane" ref={detailPane}>
+        <button className="button subtle editor-list-back" onClick={back}>
           ← {label}の一覧へ戻る
         </button>
         {panes.slice(1)}

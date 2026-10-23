@@ -148,3 +148,91 @@ test("mobile can open a separate character editor or keep the inline view; time 
     ),
   ).toBe(true);
 });
+
+test("phone navigation goes directly to people and materials, remembers selection, and native back returns to the list", async ({
+  page,
+}) => {
+  test.skip(test.info().project.name !== "android", "Phone-only navigation");
+  const data = emptyData();
+  data.projects = [{ ...newProject(), id: "s", name: "長い物語" }];
+  data.entries = Array.from({ length: 80 }, (_, i) => ({
+    ...newEntry("s", "character"),
+    id: `c${i}`,
+    name: `人物${i}`,
+  }));
+  data.entries.push({
+    ...newEntry("s", "world"),
+    id: "place",
+    name: "街の資料",
+  });
+  await page.addInitScript((d) => {
+    localStorage.setItem("tsuzuriniwa:launch-mode", "resume");
+    localStorage.setItem("tsuzuriniwa:active-workspace", "s");
+    const q = indexedDB.open("tsuzuriniwa", 1);
+    q.onupgradeneeded = () =>
+      q.result.createObjectStore("state").put(d, "main");
+    q.onsuccess = () => q.result.close();
+  }, data);
+  await page.goto("./");
+  const bottom = page.getByRole("navigation", {
+    name: "スマートフォンナビゲーション",
+  });
+  await bottom.getByRole("button", { name: "人物", exact: true }).click();
+  const search = page.getByLabel("登場人物を探す", { exact: true });
+  await expect(search).toBeVisible();
+  expect((await search.boundingBox())!.y).toBeLessThan(450);
+  await search.fill("人物79");
+  await page.locator(".creation-person").click();
+  await expect(page.locator(".creation-tabs")).toBeHidden();
+  await expect(
+    page.getByRole("region", { name: "人物79のストーリー設定" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "登場人物に追加", exact: true })
+    .click();
+  const role = page.getByLabel("このストーリーでの役割", { exact: true });
+  await role.fill("保存する役割");
+  await role.focus();
+  await page.evaluate(() => {
+    const viewport = window.visualViewport!;
+    Object.defineProperty(viewport, "height", {
+      configurable: true,
+      value: viewport.height - 300,
+    });
+    viewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(bottom).toBeHidden();
+  await page.evaluate(() => {
+    const viewport = window.visualViewport!;
+    delete (viewport as unknown as Record<string, unknown>).height;
+    (document.activeElement as HTMLElement)?.blur();
+    viewport.dispatchEvent(new Event("resize"));
+  });
+  await expect(bottom).toBeVisible();
+  await page.screenshot({
+    path: "/tmp/storymaker-phone-refined.png",
+    fullPage: false,
+  });
+  await bottom.getByRole("button", { name: "資料", exact: true }).click();
+  await page
+    .getByRole("button", { name: /街の資料/ })
+    .filter({ has: page.locator("strong") })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "街の資料のストーリー設定" }),
+  ).toBeVisible();
+  await bottom.getByRole("button", { name: "人物", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "人物79のストーリー設定" }),
+  ).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(new Event("native-back")));
+  await expect(search).toHaveValue("人物79");
+  await expect(page.locator(".editor-detail-pane")).toBeHidden();
+  await bottom.getByRole("button", { name: "その他", exact: true }).click();
+  await page
+    .getByRole("button", { name: "時間軸グラフを開く", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "世界と物語の時間軸グラフ" }),
+  ).toBeVisible();
+});

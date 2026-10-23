@@ -60,6 +60,8 @@ interface Props {
   initialSceneId?: string;
   initialSection?: string;
   onSelectionChange?: (id: string) => void;
+  onWorkbenchTab?: (tab: string) => void;
+  sectionRequest?: number;
 }
 const text = (
   event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -95,6 +97,8 @@ function StoryMaker({
   initialSceneId,
   initialSection,
   notice,
+  onWorkbenchTab,
+  sectionRequest,
 }: Props & { project: Project }) {
   const entries = useMemo(
     () => creationEntries(data, projectId),
@@ -173,6 +177,19 @@ function StoryMaker({
       localStorage.setItem(`tsuzuriniwa:workbench:${projectId}`, tab);
     } catch {}
   }, [projectId, tab]);
+  useEffect(() => {
+    if (
+      initialSection &&
+      ["planning", "scenes", "cast", "references", "timeline"].includes(
+        initialSection,
+      )
+    )
+      setTab(initialSection);
+  }, [initialSection, sectionRequest]);
+  useEffect(() => {
+    onWorkbenchTab?.(tab);
+  }, [tab, onWorkbenchTab]);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [detailRequested, setDetailRequested] = useState(
     Boolean(initialSceneId),
   );
@@ -224,7 +241,10 @@ function StoryMaker({
     data.entries.find((entry) => entry.id === id)?.name || "未設定";
   const chapters = [...columns, { id: "", name: "未分類" }];
   return (
-    <section className="creation-workspace" aria-label="ストーリー制作画面">
+    <section
+      className={`creation-workspace ${mobileActionsOpen ? "mobile-actions-open" : ""}`}
+      aria-label="ストーリー制作画面"
+    >
       <header className="page-title">
         <div className="hero-content">
           <span className="eyebrow">STORY WORKSPACE</span>
@@ -234,6 +254,13 @@ function StoryMaker({
               "章とシーンを組み立て、人物・舞台・時間をつなぎながら書く。"}
           </p>
         </div>
+        <button
+          className="button subtle mobile-workspace-actions"
+          aria-expanded={mobileActionsOpen}
+          onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
+        >
+          作品の操作
+        </button>
         <div className="page-actions">
           <button className="button subtle" onClick={onEditProject}>
             ストーリーを編集
@@ -875,7 +902,7 @@ function StoryMaker({
           mode={data.appearance?.mobileEditor}
           selection={person?.id || ""}
           label="人物"
-          initialDetail={Boolean(initialSceneId)}
+          initialDetail={Boolean(initialSceneId || personId)}
         >
           <aside className="panel creation-index">
             <h2>人物を選ぶ</h2>
@@ -1079,7 +1106,7 @@ function StoryMaker({
           mode={data.appearance?.mobileEditor}
           selection={referenceId}
           label="資料"
-          initialDetail={Boolean(initialSceneId)}
+          initialDetail={Boolean(initialSceneId || referenceId)}
         >
           <aside className="panel creation-index">
             <h2>使える設定資料</h2>
@@ -1178,6 +1205,9 @@ function LocalSetting({
   onOpen: (id: string) => void;
   compact?: boolean;
 }) {
+  const [baseOpen, setBaseOpen] = useState(
+    () => !compact && !window.matchMedia("(max-width:720px)").matches,
+  );
   if (!entry) return <p>参照先の設定がありません。</p>;
   const portrayal = (studioOf(data).portrayals || []).find(
     (p) => p.projectId === projectId && p.entryId === entry.id,
@@ -1194,7 +1224,10 @@ function LocalSetting({
       aria-label={`${entry.name}のストーリー設定`}
     >
       <h2>{entry.name}</h2>
-      <details open={!compact}>
+      <details
+        open={baseOpen}
+        onToggle={(e) => setBaseOpen(e.currentTarget.open)}
+      >
         <summary>元の設定を確認</summary>
         <p className="creation-base-text">
           {entry.body || entry.subtitle || "基本設定はまだありません。"}
@@ -1211,9 +1244,7 @@ function LocalSetting({
           元の設定の詳細を開く
         </button>
       </details>
-      <p className="muted">
-        以下はこのストーリーだけの設定です。元の資料やほかのストーリーには反映しません。
-      </p>
+      <p className="muted">物語専用の設定です。元の資料は変わりません。</p>
       {person && !portrayal ? (
         <button className="button primary" onClick={() => patch({})}>
           <Users size={16} />
