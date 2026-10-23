@@ -1,3 +1,6 @@
+import FlowCanvas from "./FlowCanvas";
+import WritingWorkspace from "./WritingWorkspace";
+import { isAndroidApp } from "./native";
 import EditorSplit from "./EditorSplit";
 import SceneTimelineGraph from "./SceneTimelineGraph";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -115,9 +118,15 @@ function StoryMaker({
   );
   const [tab, setTab] = useState(
       initialSection &&
-        ["planning", "scenes", "cast", "references", "timeline"].includes(
-          initialSection,
-        )
+        [
+          "writing",
+          "flow",
+          "planning",
+          "scenes",
+          "cast",
+          "references",
+          "timeline",
+        ].includes(initialSection)
         ? initialSection
         : initialPortrayal
           ? data.entries.find((e) => e.id === initialPortrayal.entryId)
@@ -133,6 +142,8 @@ function StoryMaker({
                   );
                   return saved &&
                     [
+                      "writing",
+                      "flow",
                       "planning",
                       "scenes",
                       "cast",
@@ -180,15 +191,25 @@ function StoryMaker({
   useEffect(() => {
     if (
       initialSection &&
-      ["planning", "scenes", "cast", "references", "timeline"].includes(
-        initialSection,
-      )
+      [
+        "writing",
+        "flow",
+        "planning",
+        "scenes",
+        "cast",
+        "references",
+        "timeline",
+      ].includes(initialSection)
     )
       setTab(initialSection);
   }, [initialSection, sectionRequest]);
   useEffect(() => {
     onWorkbenchTab?.(tab);
   }, [tab, onWorkbenchTab]);
+  const [organizeTab, setOrganizeTab] = useState("planning");
+  useEffect(() => {
+    if (tab !== "writing") setOrganizeTab(tab);
+  }, [tab]);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [detailRequested, setDetailRequested] = useState(
     Boolean(initialSceneId),
@@ -242,9 +263,58 @@ function StoryMaker({
   const chapters = [...columns, { id: "", name: "未分類" }];
   return (
     <section
-      className={`creation-workspace ${mobileActionsOpen ? "mobile-actions-open" : ""}`}
+      className={`creation-workspace ${tab === "writing" ? "writing-mode" : "organizing-mode"} ${mobileActionsOpen ? "mobile-actions-open" : ""}`}
+      data-work-section={tab}
       aria-label="ストーリー制作画面"
     >
+      <nav className="workbench-modes" aria-label="執筆と整理の切替">
+        <button
+          className="button subtle"
+          aria-pressed={tab === "writing"}
+          onClick={() => setTab("writing")}
+        >
+          執筆
+        </button>
+        <button
+          className="button subtle"
+          aria-pressed={tab !== "writing"}
+          onClick={() => setTab(organizeTab)}
+        >
+          設定・構成
+        </button>
+        {!isAndroidApp && (
+          <div className="desktop-detach">
+            {[
+              ["writing", "執筆を別ウィンドウ"],
+              ["flow", "ボードを別ウィンドウ"],
+              ["references", "資料を別ウィンドウ"],
+            ].map(([work, label]) => (
+              <button
+                className="button subtle"
+                key={work}
+                onClick={() => {
+                  const url = new URL(location.href);
+                  url.search = `project=${encodeURIComponent(projectId)}&work=${work}`;
+                  const child = window.open(
+                    url.href,
+                    `tsuzuriniwa-${projectId}-${work}`,
+                    "popup,width=1080,height=850",
+                  );
+                  if (child) {
+                    child.opener = null;
+                    child.focus();
+                  } else
+                    notice(
+                      "別ウィンドウを開けませんでした。ブラウザのポップアップ許可を確認してください。",
+                    );
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </nav>
       <header className="page-title">
         <div className="hero-content">
           <span className="eyebrow">STORY WORKSPACE</span>
@@ -314,7 +384,8 @@ function StoryMaker({
       <nav className="creation-tabs" aria-label="制作の作業切替">
         {[
           ["planning", "プロット設計"],
-          ["scenes", "構成・執筆"],
+          ["scenes", "章・シーン"],
+          ["flow", "構成ボード"],
           ["cast", "登場人物・関係"],
           ["references", "舞台・設定資料"],
           ["timeline", "シーンの時間軸"],
@@ -344,6 +415,36 @@ function StoryMaker({
         </span>
         <small>編集内容は自動保存されます。</small>
       </div>
+      {tab === "writing" && (
+        <WritingWorkspace
+          data={data}
+          projectId={projectId}
+          sceneId={sceneId}
+          onSelect={setSceneId}
+          onCreate={() => {
+            addScene();
+            setTab("writing");
+          }}
+          onSettings={() => {
+            setDetailRequested(true);
+            setTab("scenes");
+          }}
+          change={change}
+        />
+      )}
+      {tab === "flow" && (
+        <FlowCanvas
+          data={data}
+          projectId={projectId}
+          change={change}
+          confirm={confirm}
+          onWrite={(id) => {
+            setSceneId(id);
+            setTab("writing");
+          }}
+          onEntry={onOpen}
+        />
+      )}
       {tab === "planning" && (
         <StoryPlanner
           data={data}
@@ -355,7 +456,7 @@ function StoryMaker({
               studioOf(data).scenes.find((s) => s.id === id)?.columnId || "",
             );
             setDetailRequested(true);
-            setTab("scenes");
+            setTab("writing");
           }}
           onCast={() => setTab("cast")}
           onTimeline={() => setTab("timeline")}
@@ -652,13 +753,22 @@ function StoryMaker({
                     {scene.outcome && <p>変化：{scene.outcome}</p>}
                   </div>
                 )}
-                <WritingField
-                  label="シーンの本文"
-                  value={scene.manuscript || ""}
-                  onChange={(manuscript) => update({ manuscript })}
-                  rows={16}
-                  placeholder="ここから物語を書き始める。構想中の断片でも、そのまま残せます。"
-                />
+                <button
+                  className="button primary"
+                  onClick={() => setTab("writing")}
+                >
+                  このシーンの本文を執筆
+                </button>
+                <details className="plain-manuscript-fallback">
+                  <summary>本文のプレーンテキスト編集</summary>{" "}
+                  <WritingField
+                    label="シーンの本文"
+                    value={scene.manuscript || ""}
+                    onChange={(manuscript) => update({ manuscript })}
+                    rows={16}
+                    placeholder="ここから物語を書き始める。構想中の断片でも、そのまま残せます。"
+                  />
+                </details>
                 <details>
                   <summary>このシーンで起こすこと・制作メモ</summary>
                   <WritingField

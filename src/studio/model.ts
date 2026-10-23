@@ -1,3 +1,5 @@
+import { validBoard } from "../flowModel";
+import type { FlowBoard } from "../flowModel";
 import { isWorldLibrary, sharedProjectIds, organizeStories, validateBackup } from "../model";
 import type { Data, Entry, Kind, Project } from "../model";
 
@@ -111,6 +113,7 @@ export interface Scene {
   year?: number;
   links: string[];
   manuscript?: string;
+  manuscriptHtml?: string;
   purpose?: string;
   conflict?: string;
   outcome?: string;
@@ -173,6 +176,7 @@ export interface CheckRules {
   maxLifeSpan?: number;
 }
 export interface Studio {
+  boards: FlowBoard[];
   version: 1;
   assets: Asset[];
   revisions: Revision[];
@@ -272,6 +276,7 @@ export function emptyStudio(): Studio {
     terms: [],
     columns: [],
     scenes: [],
+    boards: [],
     portrayals: [],
     references: [],
     templates: [],
@@ -382,6 +387,7 @@ export function validateStudio(raw: unknown): Studio {
     Exclude<keyof Studio, "version">,
     (v: Record<string, unknown>) => boolean
   > = {
+    boards: validBoard,
     assets: (v) => hasText(v, ["image"]) && image(v.image),
     revisions: (v) =>
       hasText(v, ["projectId", "targetId", "at", "note", "imageId"]) &&
@@ -454,6 +460,7 @@ export function validateStudio(raw: unknown): Studio {
       optionalNumber(v.year) &&
       [
         "manuscript",
+        "manuscriptHtml",
         "purpose",
         "conflict",
         "outcome",
@@ -549,6 +556,13 @@ export function cleanStudio(
     ...data,
     studio: {
       ...s,
+      boards: keep(s.boards || []).map((b) => ({
+        ...b,
+        nodes: b.nodes.map((n) => ({
+          ...n,
+          entryId: entryIds.has(n.entryId) ? n.entryId : "",
+        })),
+      })),
       knowledge: keep(s.knowledge)
         .filter(
           (item) =>

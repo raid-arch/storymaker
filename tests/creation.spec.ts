@@ -25,7 +25,8 @@ async function workspace(page: Page) {
     await expect(
       page.getByRole("region", { name: "ストーリー制作画面" }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "構成・執筆", exact: true }).click();
+    await page.getByRole("button", { name: "設定・構成", exact: true }).click();
+    await page.getByRole("button", { name: "章・シーン", exact: true }).click();
     return;
   }
   await menu(page);
@@ -36,7 +37,8 @@ async function workspace(page: Page) {
   await expect(
     page.getByRole("region", { name: "ストーリー制作画面" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "構成・執筆", exact: true }).click();
+  await page.getByRole("button", { name: "設定・構成", exact: true }).click();
+  await page.getByRole("button", { name: "章・シーン", exact: true }).click();
 }
 test.beforeEach(async ({ page }) => {
   const data = emptyData();
@@ -101,6 +103,7 @@ test("write a chapter and scene, connect world context, and retain scene-specifi
     .getByRole("button", { name: "シーンを作成", exact: true })
     .click();
   await page.getByLabel("シーン名", { exact: true }).fill("開戦の朝");
+  await page.getByText("本文のプレーンテキスト編集", { exact: true }).click();
   await page
     .getByLabel("シーンの本文", { exact: true })
     .fill("夜明けの鐘が鳴った。本文だけの言葉。");
@@ -477,18 +480,16 @@ test("story workbench designs plots, moves scenes, coordinates cast and clues, a
     "手紙を持って旅立つ",
   );
   await page.getByRole("button", { name: "本文を書く", exact: true }).click();
-  await expect(page.locator(".scene-writing-guide")).toContainText(
-    "日常から外の世界へ進む",
-  );
   await page
-    .getByLabel("シーンの本文", { exact: true })
+    .getByRole("textbox", { name: "執筆本文", exact: true })
     .fill("夜明け。彼はまだ封を開けていなかった。");
   await save(page);
   await page.reload();
-  await expect(page.getByLabel("シーンの本文", { exact: true })).toHaveValue(
-    "夜明け。彼はまだ封を開けていなかった。",
-  );
-  await page.getByRole("button", { name: "設計図へ戻る", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "執筆本文", exact: true }),
+  ).toHaveText("夜明け。彼はまだ封を開けていなかった。");
+  await page.getByRole("button", { name: "設定・構成", exact: true }).click();
+  await page.getByRole("button", { name: "プロット設計", exact: true }).click();
   await expect(
     page.getByLabel("この物語を一文で", { exact: true }),
   ).toHaveValue("一人が故郷を守るために秘密を追う。");
@@ -546,11 +547,9 @@ test("scene cards can be reordered with desktop drag or touch-friendly buttons a
         has: page.getByRole("heading", { name: "次の場面", exact: true }),
       })
       .dragTo(
-        page
-          .locator(".plot-workbench-card")
-          .filter({
-            has: page.getByRole("heading", { name: "最初の場面", exact: true }),
-          }),
+        page.locator(".plot-workbench-card").filter({
+          has: page.getByRole("heading", { name: "最初の場面", exact: true }),
+        }),
       );
   } else
     await page

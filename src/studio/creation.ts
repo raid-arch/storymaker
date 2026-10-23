@@ -50,6 +50,8 @@ export function patchScene(
     scenes: s.scenes.map((scene) => {
       if (scene.id !== id) return scene;
       const next = { ...scene, ...patch };
+      if (patch.manuscript !== undefined && patch.manuscriptHtml === undefined)
+        delete next.manuscriptHtml;
       const oldRefs = new Set(
         [
           ...(patch.castIds !== undefined

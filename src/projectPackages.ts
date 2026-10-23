@@ -4,7 +4,7 @@ import { cleanStudio, studioOf } from "./studio/model";
 import { shelfDescendants } from "./collections";
 export const packageFormat = "tsuzuriniwa-project-package";
 export interface ProjectPackage { format: typeof packageFormat; version: 1; data: Data }
-const refs = new Set(["id", "projectId", "parentId", "collectionId", "worldIds", "eventOrder", "links", "from", "to", "characterId", "entryId", "sceneId", "eraId", "imageId", "targetId", "columnId", "chapterId", "beforeId", "afterId", "placeId", "povId", "eventId", "castIds"]);
+const refs = new Set(["id", "projectId", "parentId", "collectionId", "worldIds", "eventOrder", "links", "from", "to", "characterId", "entryId", "sceneId", "eraId", "imageId", "targetId", "columnId", "chapterId", "beforeId", "afterId", "placeId", "povId", "eventId", "castIds", "currentNodeId"]);
 /** Only rewrite structural IDs; prose, free fields, and custom values are opaque. */
 function rewrite(value: unknown, mapping: Map<string, string>, key = ""): unknown {
   if (typeof value === "string") return refs.has(key) ? mapping.get(value) ?? value : value;

@@ -65,7 +65,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRegisterSW } from "virtual:pwa-register/react";
-import { load, persist } from "./storage";
+import { acceptSaved, readSaved, watchStorage, load, persist } from "./storage";
 import {
   sharedProjectIds,
   isWorldLibrary,
@@ -286,8 +286,10 @@ export default function App() {
     eraId: "",
   });
   const [saveState, setSaveState] = useState("保存済み");
+  const saveStateRef = useRef(saveState);
+  saveStateRef.current = saveState;
   const [saveError, setSaveError] = useState("");
-  const saveQueue = useRef(Promise.resolve());
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve());
   const saveRevision = useRef(0);
   const history = useRef<Data[]>([]);
   const lastHistory = useRef({ id: "", at: 0 });
@@ -421,6 +423,21 @@ export default function App() {
           setData(d);
           setProjectId(d.projects[0]?.id || "");
           try {
+            const params = new URLSearchParams(location.search),
+              target = params.get("project"),
+              work = params.get("work");
+            if (
+              target &&
+              d.projects.some((p) => p.id === target) &&
+              work &&
+              ["writing", "flow", "cast", "references"].includes(work)
+            ) {
+              setProjectId(target);
+              setSession("editor");
+              setView("creation");
+              setCreationSection(work);
+              return;
+            }
             const last = localStorage.getItem("tsuzuriniwa:active-workspace");
             if (last && d.projects.some((p) => p.id === last)) {
               setLastOpenedId(last);
@@ -470,6 +487,36 @@ export default function App() {
       } catch {}
     }
   }, [view, projectId, data?.projects, session]);
+  useEffect(
+    () =>
+      watchStorage(() => {
+        if (
+          !dataRef.current ||
+          saveStateRef.current !== "保存済み" ||
+          document.activeElement?.matches(
+            "input,textarea,[contenteditable=true]",
+          )
+        )
+          return;
+        const revision = saveRevision.current;
+        void readSaved()
+          .then((saved) => {
+            if (
+              revision !== saveRevision.current ||
+              saveStateRef.current !== "保存済み"
+            )
+              return;
+            if (JSON.stringify(saved) === JSON.stringify(dataRef.current))
+              return;
+            acceptSaved(saved);
+            history.current = [];
+            dataRef.current = saved;
+            setData(saved);
+          })
+          .catch(() => {});
+      }),
+    [],
+  );
   useEffect(() => {
     if (!data) return;
     const root = document.documentElement;
@@ -491,13 +538,20 @@ export default function App() {
       saveQueue.current = saveQueue.current
         .catch(() => {})
         .then(() => persist(data))
-        .then(() => {
+        .then((saved) => {
           if (revision === saveRevision.current) {
+            acceptSaved(saved);
+            if (JSON.stringify(saved) !== JSON.stringify(dataRef.current)) {
+              history.current = [];
+              dataRef.current = saved;
+              setData(saved);
+            }
             setSaveState("保存済み");
             setSaveError("");
           }
         })
         .catch((e) => {
+          if (revision !== saveRevision.current) return;
           setSaveState("保存失敗");
           setSaveError(
             `保存できませんでした。ストレージ容量やブラウザの設定を確認し、JSONを書き出して保護してください。 (${e instanceof Error ? e.message : "不明なエラー"})`,
@@ -523,7 +577,13 @@ export default function App() {
       if (latest)
         saveQueue.current = saveQueue.current
           .catch(() => {})
-          .then(() => persist(latest));
+          .then(() => persist(latest))
+          .catch((e) => {
+            setSaveState("保存失敗");
+            setSaveError(
+              `保存できませんでした。JSONでデータを保護してください。${e instanceof Error ? e.message : ""}`,
+            );
+          });
     };
     const back = () => {
       if (document.querySelector('[role="dialog"],dialog[open]')) {
@@ -926,7 +986,7 @@ export default function App() {
   );
   return (
     <div
-      className={`app-shell session-${session} settings-${settingsTab} ${project && isWorldLibrary(project) ? "world-editor" : "story-editor"} ${view === "settings" || view === "projects" ? "utility-view" : "workspace-view"} ${mobileProjectHome ? "mobile-project-home" : ""}`}
+      className={`app-shell ${new URLSearchParams(location.search).get("work") ? "detached-workspace" : ""} session-${session} settings-${settingsTab} ${project && isWorldLibrary(project) ? "world-editor" : "story-editor"} ${view === "settings" || view === "projects" ? "utility-view" : "workspace-view"} ${mobileProjectHome ? "mobile-project-home" : ""}`}
     >
       {session !== "editor" && (
         <ProjectGateway
@@ -2964,7 +3024,7 @@ export default function App() {
                   : ""
               }
               onClick={() => {
-                setCreationSection("scenes");
+                setCreationSection("writing");
                 setSectionRequest((n) => n + 1);
                 setCreationSceneId("");
                 setInspectorOpen(false);

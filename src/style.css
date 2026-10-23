@@ -5124,3 +5124,76 @@ kbd {
 
 .mobile-workspace-shortcuts { display:none; }
 @media(max-width:720px){ .mobile-workspace-shortcuts { display:grid; gap:6px; margin-bottom:12px; } .mobile-workspace-shortcuts button { min-height:44px; text-align:left; padding:10px 12px; color:var(--green); font-size:13px; border:1px solid var(--line); border-radius:6px; } }
+.workbench-modes { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.workbench-modes [aria-pressed=true] { border-color:var(--green); color:var(--green); background:var(--green-dim); }
+.desktop-detach { margin-left:auto; display:flex; gap:8px; }
+.desktop-detach button { font-size:11px; }
+.writing-mode > .page-title,.writing-mode > .creation-tabs,.writing-mode > .creation-summary { display:none; }
+.word-toolbar,.word-format,.writing-scene-chooser,.flow-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.writing-scene-chooser { margin:16px 0; }
+.writing-scene-chooser label { flex:1; min-width:180px; }
+.word-toolbar { padding:12px; background:var(--panel); border:1px solid var(--line); }
+.word-toolbar strong { color:var(--heading); flex:1; }
+.word-toolbar span { color:var(--muted); font-size:12px; }
+.word-format { position:sticky; top:76px; z-index:14; padding:10px; background:var(--panel); border:1px solid var(--line); }
+.word-format button { min-height:40px; padding:8px; border:1px solid var(--line); border-radius:4px; font-size:12px; }
+.word-format select { width:auto; max-width:150px; }
+.word-paper-area { background:var(--sidebar); padding:32px 20px; }
+.word-paper { max-width:790px; min-height:1000px; margin:auto; padding:64px 70px; background:#fffef9; color:#242424; font-size:17px; line-height:2; outline:none; box-shadow:0 4px 25px #0003; overflow-wrap:anywhere; white-space:pre-wrap; }
+.word-serif { font-family:"Yu Mincho","Hiragino Mincho ProN",serif; }
+.word-sans { font-family:var(--font-sans); }
+.word-paper h1 { font-size:30px; color:inherit; }
+.word-paper h2 { font-size:24px; color:inherit; }
+.word-paper h3 { font-size:20px; color:inherit; }
+.word-paper p { margin:0 0 1em; }
+.flow-tools select { width:auto; max-width:230px; }
+.flow-help { color:var(--muted); font-size:12px; line-height:1.8; }
+.flow-viewport { height:620px; position:relative; overflow:hidden; touch-action:none; background-color:var(--input); background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px); background-size:32px 32px; border:1px solid var(--line); border-radius:10px; }
+.flow-plane { position:absolute; left:0; top:0; transform-origin:0 0; pointer-events:none; }
+.flow-lines { position:absolute; left:-10000px; top:-10000px; overflow:visible; transform:translate(10000px,10000px); color:var(--green); }
+.flow-lines path { fill:none; stroke:var(--green); stroke-width:2; }
+.flow-lines text { fill:var(--green); stroke:var(--input); stroke-width:4; paint-order:stroke; font-size:12px; }
+.flow-node { position:absolute; width:230px; min-height:80px; border:1px solid var(--line); border-left:4px solid; background:var(--panel); border-radius:8px; pointer-events:auto; box-shadow:var(--shadow); }
+.flow-node.selected { outline:2px solid var(--green); }
+.flow-node.current:before { content:"現在地"; display:block; color:var(--green); padding:5px 12px; font-size:11px; }
+.flow-node-handle { display:block; width:100%; padding:14px 12px; text-align:left; font-weight:600; color:var(--heading); touch-action:none; cursor:grab; overflow-wrap:anywhere; }
+.flow-node > p { font-size:12px; padding:0 12px; white-space:pre-wrap; max-height:120px; overflow:auto; color:var(--muted); }
+.flow-node > div { display:flex; flex-wrap:wrap; border-top:1px solid var(--line); }
+.flow-node > div button { flex:1; padding:10px 6px; font-size:11px; min-height:40px; }
+.flow-properties { margin-top:18px; padding:24px; }
+.flow-properties label { margin-bottom:16px; display:block; }
+.flow-properties input[type=color] { height:44px; width:100px; padding:4px; }
+.flow-edge-edit { display:flex; gap:12px; align-items:center; }
+.flow-edge-edit label { flex:1; }
+.flow-zoom { position:absolute; bottom:16px; right:16px; display:grid; justify-items:center; background:var(--panel); border:1px solid var(--line); z-index:4; font-size:11px; }
+.flow-zoom button { min-height:40px; min-width:48px; }
+.flow-minimap { position:absolute; bottom:16px; left:16px; width:150px; height:85px; border:1px solid var(--line); background:var(--panel); pointer-events:auto; }
+.flow-minimap rect { fill:var(--green); }
+@media(max-width:1099px){ .desktop-detach { display:none; } }
+@media(max-width:720px){ .word-format { top:62px; flex-wrap:nowrap; overflow-x:auto; } .word-format > * { flex-shrink:0; } .word-paper-area { padding:12px 0; } .word-paper { min-height:75vh; padding:24px 18px; font-size:17px; box-shadow:none; } .workbench-modes { margin-bottom:12px; } .flow-viewport { height:65dvh; min-height:360px; } .flow-properties { padding:16px; } .flow-tools select { max-width:100%; } }
+@media print { .sidebar,.topbar,.bottom-nav,.workspace-context-panel,.workbench-modes,.writing-scene-chooser,.word-toolbar,.word-format { display:none!important; } .main-shell { margin:0!important; } .word-paper-area { padding:0;background:white; } .word-paper { box-shadow:none; max-width:none; padding:0; } }
+.flow-lines { left:0;top:0;transform:none; }
+.flow-lines marker path { fill:var(--green);stroke:none; }
+.detached-workspace .sidebar,.detached-workspace .workspace-context-panel,.detached-workspace .workspace-scope-strip { display:none!important; }
+.detached-workspace .main-shell { margin:0!important; }
+/* Keep the writing page focused and avoid repeating the project title above phone lists. */
+.writing-mode > .creation-reference-strip { display:none; }
+@media(max-width:720px) { .story-editor .creation-workspace:has(.split-pages) > .page-title { display:none; } }
+@media(max-width:720px) {
+ .writing-scene-chooser { align-items:flex-end; margin:8px 0; gap:8px; }
+ .writing-scene-chooser label { min-width:160px; }
+ .writing-scene-chooser > button { min-height:44px; padding:10px; font-size:12px; }
+ .writing-scene-chooser select { min-height:44px; margin:4px 0 0; padding:10px; }
+ .writing-mode .workbench-modes { margin-bottom:8px; }
+ .word-toolbar { padding:8px; }
+ .word-toolbar strong { display:none; }
+ .word-toolbar span { margin-left:auto; }
+ .word-toolbar .button { min-height:40px; padding:8px; font-size:12px; }
+ .word-format { padding:6px; }
+}
+@media(max-width:720px) {
+ .creation-workspace[data-work-section=flow] > .page-title,
+ .creation-workspace[data-work-section=flow] > .creation-summary { display:none; }
+ .flow-tools .button { min-height:44px; padding:10px; font-size:12px; }
+ .flow-tools select { min-height:44px; padding:10px; }
+}
