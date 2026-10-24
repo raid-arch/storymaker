@@ -92,7 +92,7 @@ import { FamilyGraph, RelationForm } from "./Graph";
 import InstallApp from "./InstallApp";
 import Modal from "./Modal";
 import CardSurface, { CardMenuButton } from "./CardSurface";
-import GitHubSync from "./GitHubSync";
+import CloudSync from "./CloudSync";
 import AppearanceSettings from "./AppearanceSettings";
 import { defaultAppearance } from "./appearance";
 import type { DashboardSection } from "./appearance";
@@ -1522,7 +1522,7 @@ export default function App() {
             <main
               className={`main-content ${mobileProjectHome ? "mobile-home-active" : ""}`}
             >
-              <GitHubSync
+              <CloudSync
                 data={data}
                 saveState={saveState}
                 expanded={
@@ -2806,7 +2806,7 @@ export default function App() {
                           <h2>大切なデータを守る</h2>
                           <p>
                             すべての情報はこのブラウザの IndexedDB
-                            に自動保存されます。非公開GitHubとの同期を接続すると端末間でも共有できます。ブラウザのデータ削除や端末故障に備えて、定期的にJSONを書き出してください。
+                            に自動保存されます。Google Driveまたは非公開GitHubとの同期を接続すると端末間でも共有できます。ブラウザのデータ削除や端末故障に備えて、定期的にJSONを書き出してください。
                           </p>
                           <div className="backup-info">
                             <span>前回のJSON書き出し</span>

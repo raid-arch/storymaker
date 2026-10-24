@@ -1,6 +1,15 @@
 package jp.raidarch.tsuzuriniwa;
 
 import android.app.Activity;
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import com.google.android.gms.auth.api.identity.Identity;
+import com.google.android.gms.auth.api.identity.AuthorizationRequest;
+import com.google.android.gms.auth.api.identity.AuthorizationResult;
+import com.google.android.gms.common.api.Scope;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -30,6 +39,86 @@ public class StorymakerPlugin extends Plugin {
   private static final String RELEASE_PREFIX = "https://raid-arch.github.io/storymaker/downloads/";
   private static final String LATEST =
       "https://raid-arch.github.io/storymaker/android-release.json";
+
+  private ActivityResultLauncher<IntentSenderRequest> googleLauncher;
+  private PluginCall googleCall;
+
+  @Override
+  public void load() {
+    googleLauncher = bridge.registerForActivityResult(
+      new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+        PluginCall call = googleCall;
+        googleCall = null;
+        if (call == null) return;
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+          call.reject("Googleへの接続をキャンセルしました。");
+          return;
+        }
+        try {
+          finishGoogle(call, Identity.getAuthorizationClient(getActivity()).getAuthorizationResultFromIntent(result.getData()));
+        } catch (Exception e) { call.reject("Googleへの接続を完了できませんでした。"); }
+      });
+  }
+
+  private void finishGoogle(PluginCall call, AuthorizationResult result) {
+    String token = result.getAccessToken();
+    if (token == null || token.isEmpty() || result.getGrantedScopes() == null || !result.getGrantedScopes().contains("https://www.googleapis.com/auth/drive.appdata")) {
+      call.reject("Google Driveへのアクセスが許可されませんでした。");
+      return;
+    }
+    JSObject response = new JSObject();
+    response.put("accessToken", token);
+    call.resolve(response);
+  }
+
+  @PluginMethod
+  public void googleAuthorize(PluginCall call) {
+    getActivity().runOnUiThread(() -> {
+      if (googleCall != null) { call.reject("Googleへの接続処理中です。"); return; }
+      String email = call.getString("email", "");
+      if (email.isEmpty()) {
+        if (!Boolean.TRUE.equals(call.getBoolean("interactive", false))) { call.reject("Googleへの接続が必要です。"); return; }
+        googleCall = call;
+        try {
+          startActivityForResult(call, AccountManager.newChooseAccountIntent(null, null, new String[] { "com.google" }, null, null, null, null), "googleAccountSelected");
+        } catch (Exception e) { googleCall = null; call.reject("Googleアカウントの選択画面を開けませんでした。"); }
+      } else authorizeGoogle(call, email);
+    });
+  }
+
+  @ActivityCallback
+  private void googleAccountSelected(PluginCall call, ActivityResult result) {
+    googleCall = null;
+    if (call == null) return;
+    if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) { call.reject("アカウントの選択をキャンセルしました。"); return; }
+    String email = result.getData().getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+    if (email == null || email.isEmpty()) { call.reject("アカウントを確認できませんでした。"); return; }
+    authorizeGoogle(call, email);
+  }
+
+  private void authorizeGoogle(PluginCall call, String email) {
+    getActivity().runOnUiThread(() -> {
+      if (googleCall != null) { call.reject("Googleへの接続処理中です。"); return; }
+      AuthorizationRequest.Builder builder = AuthorizationRequest.builder()
+        .setRequestedScopes(Arrays.asList(new Scope("https://www.googleapis.com/auth/drive.appdata")));
+      if (!email.isEmpty()) builder.setAccount(new Account(email, "com.google"));
+      googleCall = call;
+      Identity.getAuthorizationClient(getActivity()).authorize(builder.build())
+        .addOnSuccessListener(result -> {
+          if (result.hasResolution()) {
+            if (!Boolean.TRUE.equals(call.getBoolean("interactive", false))) {
+              googleCall = null;
+              call.reject("Googleへの再接続が必要です。");
+              return;
+            }
+            try {
+              googleLauncher.launch(new IntentSenderRequest.Builder(result.getPendingIntent().getIntentSender()).build());
+            } catch (Exception e) { googleCall = null; call.reject("Googleの接続画面を開けませんでした。"); }
+          } else { googleCall = null; finishGoogle(call, result); }
+        })
+        .addOnFailureListener(error -> { googleCall = null; call.reject("Google認証に失敗しました。アプリ登録を確認してください。"); });
+    });
+  }
 
   private PackageInfo current() throws Exception {
     return getContext()

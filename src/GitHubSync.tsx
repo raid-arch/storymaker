@@ -95,6 +95,15 @@ export default function GitHubSync({
   useEffect(() => {
     if (pending && !dialog.current?.open) dialog.current?.showModal();
   }, [pending]);
+  async function assertProvider() {
+    if (
+      !active.current ||
+      (await readLocalSetting("sync-provider")) !== "github"
+    )
+      throw new SyncError(
+        "同期サービスが変更されました。同期設定を確認してください。",
+      );
+  }
   async function rememberConnection(next: SyncConnection) {
     await writeLocalSetting(key, rememberRef.current ? next : undefined);
     if (active.current) {
@@ -111,11 +120,14 @@ export default function GitHubSync({
     });
   }
   async function replaceSafely(remote: Data, localHash: string) {
+    if (!active.current) throw new DOMException("Cancelled", "AbortError");
+    await assertProvider();
     await writeLocalSetting("before-github-sync", latest.current.data);
     if ((await fingerprint(latest.current.data)) !== localHash)
       throw new SyncError(
         "編集中に内容が変わったため、読み込みを止めました。もう一度同期してください。",
       );
+    if (!active.current) throw new DOMException("Cancelled", "AbortError");
     latest.current.onReplace(remote);
   }
   function failure(e: unknown) {
@@ -147,6 +159,7 @@ export default function GitHubSync({
     setStatus("同期中…");
     controller.current = new AbortController();
     try {
+      await assertProvider();
       const verified = await verifyPrivate(c, controller.current.signal),
         remote = await readRemote(verified, controller.current.signal),
         local = latest.current.data,
@@ -224,6 +237,7 @@ export default function GitHubSync({
     setProblem("");
     controller.current = new AbortController();
     try {
+      await assertProvider();
       if (!token.trim())
         throw new SyncError("GitHubの接続キーを入力してください。");
       const c = await verifyPrivate(
@@ -255,6 +269,7 @@ export default function GitHubSync({
     setProblem("");
     controller.current = new AbortController();
     try {
+      await assertProvider();
       const c = await verifyPrivate(
           choice.connection,
           controller.current.signal,

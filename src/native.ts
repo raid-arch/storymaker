@@ -10,6 +10,10 @@ export interface AndroidUpdate {
   sha256?: string;
 }
 interface StorymakerPlugin {
+  googleAuthorize(options: {
+    interactive: boolean;
+    email: string;
+  }): Promise<{ accessToken: string }>;
   checkUpdate(): Promise<AndroidUpdate>;
   installUpdate(): Promise<{ permissionRequired?: boolean }>;
   exportFile(options: {

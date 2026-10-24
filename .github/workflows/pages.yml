@@ -29,6 +29,7 @@ jobs:
       - run: npm run build
         env:
           VITE_BASE_PATH: /storymaker/
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
       - run: touch dist/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

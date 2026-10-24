@@ -5227,3 +5227,12 @@ kbd {
 .editor-extension-content { padding:0 16px 16px; border-top:1px solid var(--line); }
 .editor-extension-content > .panel { box-shadow:none; border:0; padding:16px 0 0; margin:0!important; background:transparent; }
 .editor-extension-content > .writing-field { margin-top:16px; }
+.sync-provider { padding:16px; margin-bottom:16px; }
+.sync-provider label { max-width:420px; }
+.google-setup { margin:20px 0; padding:12px; border:1px solid var(--line); border-radius:8px; }
+.google-setup > summary { cursor:pointer; min-height:44px; padding:10px 0; color:var(--green); }
+.google-setup input { max-width:100%; }
+.sync-panel > .page-actions,.sync-dialog > .page-actions { flex-wrap:wrap; gap:10px; }
+.sync-panel .page-actions .button,.sync-dialog .page-actions .button { white-space:normal; min-width:0; overflow-wrap:anywhere; flex:1 1 220px; }
+.sync-panel p,.sync-panel strong { overflow-wrap:anywhere; }
+.utility-view .main-content > .sync-provider { order:2; }
