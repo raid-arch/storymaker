@@ -240,7 +240,7 @@ export function newEntry(projectId: string, kind: Kind): Entry {
     truth: "",
     fields:
       kind === "character"
-        ? { 生存状況: "生存", 系統: "本家" }
+        ? {}
         : kind === "clue"
           ? { 回収状況: "未回収" }
           : {},

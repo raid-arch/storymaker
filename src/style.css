@@ -5197,3 +5197,20 @@ kbd {
  .flow-tools .button { min-height:44px; padding:10px; font-size:12px; }
  .flow-tools select { min-height:44px; padding:10px; }
 }
+.optional-character-fields { margin:20px 0; }
+.optional-character-fields .section-heading { flex-wrap:wrap; gap:12px; }
+.optional-character-fields .section-heading select { width:auto; min-width:170px; max-width:100%; }
+.optional-character-field { flex:1 1 240px; min-width:0; }
+.optional-character-field label { display:block; }
+.optional-field-remove { font-size:12px; color:var(--muted); min-height:36px; }
+.field-add-row { display:flex; align-items:flex-end; gap:12px; flex-wrap:wrap; margin:16px 0; }
+.field-add-row label { flex:1; min-width:180px; margin:0; }
+.field-add-row input { margin-bottom:0; }
+.field-add-row button { min-height:44px; }
+.frequent-fields { margin:20px 0; }
+.frequent-fields strong { display:block; font-size:13px; color:var(--muted); margin-bottom:10px; }
+.frequent-fields > div { display:flex; gap:8px; flex-wrap:wrap; }
+.frequent-fields .button { padding:8px 12px; min-height:44px; font-size:13px; }
+.optional-character-fields > .panel { padding:16px 0 0; border:0; box-shadow:none; background:transparent; }
+.frequent-fields summary { cursor:pointer; min-height:44px; padding:10px 0; color:var(--muted); font-size:13px; }
+.frequent-fields[open] summary { margin-bottom:8px; }

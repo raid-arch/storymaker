@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { validBoard, type FlowBoard } from "./flowModel";
 import { emptyData, newProject, validateBackup } from "./model";
-import { emptyStudio } from "./studio/model";
+import { cleanStudio, emptyStudio } from "./studio/model";
 import { addProjectPackage, exportProjectPackage } from "./projectPackages";
 const board = (): FlowBoard => ({
   id: "board",
@@ -66,4 +66,18 @@ it("imports boards with fresh graph and scene IDs while preserving formatted tex
   const legacy = structuredClone(d);
   delete (legacy.studio as Partial<typeof d.studio>)!.boards;
   expect(validateBackup(legacy).studio!.boards).toEqual([]);
+});
+
+it("deleting a setting clears only board links to that setting", () => {
+  const d = emptyData();
+  d.studio = emptyStudio();
+  const b = board();
+  b.nodes[0].entryId = "removed";
+  b.nodes[1].entryId = "retained";
+  d.studio.boards = [b];
+  const cleaned = cleanStudio(d, new Set(["removed"]));
+  expect(cleaned.studio!.boards[0].nodes.map((n) => n.entryId)).toEqual([
+    "",
+    "retained",
+  ]);
 });

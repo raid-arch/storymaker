@@ -560,7 +560,7 @@ export function cleanStudio(
         ...b,
         nodes: b.nodes.map((n) => ({
           ...n,
-          entryId: entryIds.has(n.entryId) ? n.entryId : "",
+          entryId: entryIds.has(n.entryId) ? "" : n.entryId,
         })),
       })),
       knowledge: keep(s.knowledge)

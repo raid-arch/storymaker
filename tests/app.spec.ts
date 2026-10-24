@@ -38,12 +38,14 @@ test("sample dashboard, character edits, backlinks, reload, delete and undo", as
   await nav(page, "キャラクター");
   await expect(page.locator(".entry-card")).toHaveCount(5);
   await add(page, "試験の人物");
+  await page.locator(".frequent-fields summary").click();
+  await page.getByRole("button", { name: "＋ 年齢", exact: true }).click();
   await page.getByLabel("年齢", { exact: true }).fill("21");
   await page
     .getByLabel("設定・メモ", { exact: true })
     .fill("星の庭の秘密を知っている。");
-  await page.getByRole("button", { name: "項目を追加", exact: true }).click();
-  await page.getByLabel("自由項目1の名前").fill("好きな花");
+  await page.getByLabel("追加する項目名", { exact: true }).fill("好きな花");
+  await page.getByRole("button", { name: "＋ 項目を追加", exact: true }).click();
   await page.getByLabel("自由項目1の内容").fill("月下香");
   await page.getByRole("button", { name: "関連リンクを追加" }).click();
   await page.getByRole("button", { name: /テスト家.*検証用の物語/ }).click();

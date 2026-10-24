@@ -6,7 +6,10 @@ test("consistency findings link to editable records and disappear after date cor
   await page.goto("./");
   await expect(page.locator(".project-hero")).toBeVisible();
   await openPerson(page);
+  await page.locator(".frequent-fields summary").click();
+  await page.getByRole("button", { name: "＋ 生年", exact: true }).click();
   await page.getByLabel("生年（共通年表）", { exact: true }).fill("20");
+  await page.getByRole("button", { name: "＋ 没年", exact: true }).click();
   await page.getByLabel("没年（共通年表）", { exact: true }).fill("10");
   await saved(page);
   await navStudio(page, "矛盾チェック");

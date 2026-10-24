@@ -53,6 +53,8 @@ test("shared syndromes group illnesses and update all linked people without repl
   await page.goto("./");
   await expect(page.locator(".project-hero")).toBeVisible();
   await person(page, "人物A");
+  await page.locator(".frequent-fields summary").click();
+  await page.getByRole("button", { name: "＋ 病気", exact: true }).click();
   await page.getByLabel("病気", { exact: true }).fill("この人物だけの病気メモ");
   await create(page);
   await expect(

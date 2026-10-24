@@ -357,6 +357,11 @@ export function ProjectForm({
   );
 }
 const charFields = [
+  "生存状況",
+  "系統",
+  "世代",
+  "生年",
+  "没年",
   "別名",
   "性別",
   "年齢",
@@ -404,6 +409,99 @@ export function EntryEditor({
   const relationships = data.relations.filter(
     (r) => r.from === entry.id || r.to === entry.id,
   );
+  const [newField, setNewField] = useState("");
+  const hasInfo = (key: string) =>
+    Object.hasOwn(entry.fields, key) ||
+    entry.custom.some((c) => c.name.trim() === key);
+  const frequentFields = [
+    ...new Set([
+      ...charFields,
+      ...data.entries
+        .filter((e) => e.kind === "character")
+        .flatMap((e) => e.custom.map((c) => c.name.trim())),
+    ]),
+  ].filter(Boolean);
+  const addInfo = (raw: string) => {
+    const name = raw.trim();
+    if (!name) return;
+    if (hasInfo(name)) {
+      onError("同じ名前の項目は追加済みです。");
+      return;
+    }
+    if (charFields.includes(name)) field(name, "");
+    else onChange({ ...entry, custom: [...entry.custom, { name, value: "" }] });
+    setNewField("");
+  };
+  const customFields =
+    entry.custom.length || entry.kind !== "character" ? (
+      <section className="panel editor-section">
+        <div className="section-heading">
+          <h2>自由項目</h2>
+          {entry.kind !== "character" && (
+            <button
+              className="text-button"
+              onClick={() =>
+                onChange({
+                  ...entry,
+                  custom: [...entry.custom, { name: "", value: "" }],
+                })
+              }
+            >
+              <Plus size={15} />
+              項目を追加
+            </button>
+          )}
+        </div>
+        {entry.custom.length === 0 && (
+          <p className="muted small">
+            口癖、好きな花、秘密の約束。項目を自由に追加できます。
+          </p>
+        )}
+        {entry.custom.map((c, i) => (
+          <div className="custom-row" key={i}>
+            <input
+              aria-label={`自由項目${i + 1}の名前`}
+              placeholder="項目名"
+              value={c.name}
+              onChange={(e) =>
+                onChange({
+                  ...entry,
+                  custom: entry.custom.map((x, j) =>
+                    j === i ? { ...x, name: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+            <textarea
+              aria-label={`自由項目${i + 1}の内容`}
+              placeholder="内容"
+              rows={2}
+              value={c.value}
+              onChange={(e) =>
+                onChange({
+                  ...entry,
+                  custom: entry.custom.map((x, j) =>
+                    j === i ? { ...x, value: e.target.value } : x,
+                  ),
+                })
+              }
+            />
+            <button
+              className="icon-button"
+              aria-label="自由項目を削除"
+              onClick={() =>
+                onChange({
+                  ...entry,
+                  custom: entry.custom.filter((_, j) => j !== i),
+                })
+              }
+            >
+              <X size={15} />
+            </button>
+          </div>
+        ))}
+      </section>
+    ) : null;
   return (
     <div className="entry-page">
       <button className="text-button back" onClick={onBack}>
@@ -502,23 +600,6 @@ export function EntryEditor({
                   />
                 </label>
               )}
-              {entry.kind === "character" && (
-                <label>
-                  生存状況
-                  <FreeTextInput
-                    label="生存状況"
-                    value={entry.fields.生存状況 || ""}
-                    onChange={(value) => field("生存状況", value)}
-                    suggestions={fieldOptions(data, "生存状況", [
-                      "生存",
-                      "死亡",
-                      "行方不明",
-                      "不明",
-                    ])}
-                    placeholder="例：転生、封印中、生死の概念なし"
-                  />
-                </label>
-              )}
               {entry.kind === "clue" && (
                 <label>
                   回収状況
@@ -538,80 +619,145 @@ export function EntryEditor({
               )}
             </div>
             {entry.kind === "character" && (
-              <>
-                <div className="form-row">
+              <section
+                className="optional-character-fields"
+                aria-label="人物の情報項目"
+              >
+                <h2>人物の情報</h2>
+                <div className="field-add-row">
                   <label>
-                    系統
-                    <FreeTextInput
-                      label="系統"
-                      value={entry.fields.系統 || ""}
-                      onChange={(value) => field("系統", value)}
-                      suggestions={fieldOptions(data, "系統", [
-                        "本家",
-                        "分家",
-                        "未設定",
-                      ])}
-                      placeholder="例：傍系、断絶した支流、養家"
-                    />
-                  </label>
-                  <label>
-                    世代（数字）
+                    追加する項目名
                     <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={entry.fields.世代 || ""}
-                      onChange={(e) => field("世代", e.target.value)}
-                      placeholder="例：12"
+                      aria-label="追加する項目名"
+                      value={newField}
+                      placeholder="例：口癖、好きな花、弱点"
+                      onChange={(e) => setNewField(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                          e.preventDefault();
+                          addInfo(newField);
+                        }
+                      }}
                     />
                   </label>
+                  <button
+                    className="button subtle"
+                    disabled={!newField.trim()}
+                    onClick={() => addInfo(newField)}
+                  >
+                    ＋ 項目を追加
+                  </button>
                 </div>
+                <details className="frequent-fields">
+                  <summary>よく使う項目</summary>
+                  <div>
+                    {frequentFields
+                      .filter((key) => !hasInfo(key))
+                      .map((key) => (
+                        <button
+                          className="button subtle"
+                          key={key}
+                          onClick={() => addInfo(key)}
+                        >
+                          ＋ {key}
+                        </button>
+                      ))}
+                  </div>
+                  {frequentFields.every(hasInfo) && (
+                    <p className="muted small">
+                      よく使う項目はすべて追加済みです。
+                    </p>
+                  )}
+                </details>
                 <div className="form-row wrap">
-                  <label>
-                    生年（共通年表）
-                    <input
-                      aria-label="生年（共通年表）"
-                      type="number"
-                      step="any"
-                      placeholder="未確定"
-                      value={entry.fields.生年 || ""}
-                      onChange={(event) => field("生年", event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    没年（共通年表）
-                    <input
-                      aria-label="没年（共通年表）"
-                      type="number"
-                      step="any"
-                      placeholder="未確定"
-                      value={entry.fields.没年 || ""}
-                      onChange={(event) => field("没年", event.target.value)}
-                    />
-                  </label>
-                  {charFields.map((key) => (
-                    <label key={key}>
-                      {key}
-                      {["外見", "性格", "能力", "病気", "経歴"].includes(
-                        key,
-                      ) ? (
-                        <textarea
-                          aria-label={key}
-                          rows={3}
-                          value={entry.fields[key] || ""}
-                          onChange={(e) => field(key, e.target.value)}
-                        />
-                      ) : (
-                        <input
-                          aria-label={key}
-                          value={entry.fields[key] || ""}
-                          onChange={(e) => field(key, e.target.value)}
-                        />
-                      )}
-                    </label>
-                  ))}
+                  {charFields
+                    .filter((key) => Object.hasOwn(entry.fields, key))
+                    .map((key) => (
+                      <div className="optional-character-field" key={key}>
+                        <label>
+                          {key === "世代"
+                            ? "世代（数字）"
+                            : ["生年", "没年"].includes(key)
+                              ? `${key}（共通年表）`
+                              : key}
+                          {key === "生存状況" ? (
+                            <FreeTextInput
+                              label="生存状況"
+                              value={entry.fields[key] || ""}
+                              onChange={(value) => field(key, value)}
+                              suggestions={fieldOptions(data, key, [
+                                "生存",
+                                "死亡",
+                                "行方不明",
+                                "不明",
+                              ])}
+                              placeholder="例：転生、封印中、生死の概念なし"
+                            />
+                          ) : key === "系統" ? (
+                            <FreeTextInput
+                              label="系統"
+                              value={entry.fields[key] || ""}
+                              onChange={(value) => field(key, value)}
+                              suggestions={fieldOptions(data, key, [
+                                "本家",
+                                "分家",
+                                "未設定",
+                              ])}
+                              placeholder="例：傍系、断絶した支流、養家"
+                            />
+                          ) : ["外見", "性格", "能力", "病気", "経歴"].includes(
+                              key,
+                            ) ? (
+                            <textarea
+                              aria-label={key}
+                              rows={3}
+                              value={entry.fields[key] || ""}
+                              onChange={(e) => field(key, e.target.value)}
+                            />
+                          ) : (
+                            <input
+                              aria-label={
+                                key === "世代"
+                                  ? "世代（数字）"
+                                  : ["生年", "没年"].includes(key)
+                                    ? `${key}（共通年表）`
+                                    : key
+                              }
+                              type={
+                                ["世代", "生年", "没年"].includes(key)
+                                  ? "number"
+                                  : "text"
+                              }
+                              step={key === "世代" ? "1" : "any"}
+                              min={key === "世代" ? "0" : undefined}
+                              value={entry.fields[key] || ""}
+                              onChange={(e) => field(key, e.target.value)}
+                            />
+                          )}
+                        </label>
+                        <button
+                          className="text-button optional-field-remove"
+                          aria-label={`${key}の項目を外す`}
+                          onClick={() => {
+                            if (
+                              entry.fields[key] &&
+                              !window.confirm(
+                                `「${key}」の内容を削除して項目を外しますか？`,
+                              )
+                            )
+                              return;
+                            const fields = { ...entry.fields };
+                            delete fields[key];
+                            onChange({ ...entry, fields });
+                          }}
+                        >
+                          項目を外す
+                        </button>
+                      </div>
+                    ))}
                 </div>
-              </>
+                {customFields}
+              </section>
             )}
             {entry.kind === "event" && (
               <div className="form-row">
@@ -746,71 +892,7 @@ export function EntryEditor({
               placeholder="作者だけが知る、この設定の裏側"
             />
           </section>
-          <section className="panel editor-section">
-            <div className="section-heading">
-              <h2>自由項目</h2>
-              <button
-                className="text-button"
-                onClick={() =>
-                  onChange({
-                    ...entry,
-                    custom: [...entry.custom, { name: "", value: "" }],
-                  })
-                }
-              >
-                <Plus size={15} />
-                項目を追加
-              </button>
-            </div>
-            {entry.custom.length === 0 && (
-              <p className="muted small">
-                口癖、好きな花、秘密の約束。項目を自由に追加できます。
-              </p>
-            )}
-            {entry.custom.map((c, i) => (
-              <div className="custom-row" key={i}>
-                <input
-                  aria-label={`自由項目${i + 1}の名前`}
-                  placeholder="項目名"
-                  value={c.name}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      custom: entry.custom.map((x, j) =>
-                        j === i ? { ...x, name: e.target.value } : x,
-                      ),
-                    })
-                  }
-                />
-                <textarea
-                  aria-label={`自由項目${i + 1}の内容`}
-                  placeholder="内容"
-                  rows={2}
-                  value={c.value}
-                  onChange={(e) =>
-                    onChange({
-                      ...entry,
-                      custom: entry.custom.map((x, j) =>
-                        j === i ? { ...x, value: e.target.value } : x,
-                      ),
-                    })
-                  }
-                />
-                <button
-                  className="icon-button"
-                  aria-label="自由項目を削除"
-                  onClick={() =>
-                    onChange({
-                      ...entry,
-                      custom: entry.custom.filter((_, j) => j !== i),
-                    })
-                  }
-                >
-                  <X size={15} />
-                </button>
-              </div>
-            ))}
-          </section>
+          {entry.kind !== "character" && customFields}
         </div>
         <aside className="editor-aside">
           <section className="panel editor-section">
