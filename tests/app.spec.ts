@@ -151,6 +151,7 @@ test("world categories, tags and full-text truth search", async ({ page }) => {
   await expect(page.getByLabel("カテゴリ", { exact: true })).toHaveValue(
     "言語・文字",
   );
+  await page.locator('[data-extension="truth"] > summary').click();
   await page.getByLabel("実際の真相", { exact: true }).fill("忘却の文字は青い");
   await page.getByLabel("タグを追加").fill("言語");
   await page.getByLabel("タグを追加").press("Enter");

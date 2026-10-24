@@ -5214,3 +5214,16 @@ kbd {
 .optional-character-fields > .panel { padding:16px 0 0; border:0; box-shadow:none; background:transparent; }
 .frequent-fields summary { cursor:pointer; min-height:44px; padding:10px 0; color:var(--muted); font-size:13px; }
 .frequent-fields[open] summary { margin-bottom:8px; }
+.entry-extensions { margin:24px 0; }
+.entry-extensions > h2 { font-size:18px; margin:0 0 8px; }
+.editor-extension { border:1px solid var(--line); border-radius:8px; background:var(--panel); margin:10px 0; }
+.editor-extension > summary { cursor:pointer; min-height:60px; padding:16px; display:flex; gap:12px; align-items:center; }
+.editor-extension > summary::before { content:'＋'; color:var(--green); font-size:20px; }
+.editor-extension[open] > summary::before { content:'−'; }
+.editor-extension > summary > span:first-child { flex:1; min-width:0; }
+.editor-extension summary strong { color:var(--heading); font-size:14px; display:block; }
+.editor-extension summary small { display:block; color:var(--muted); font-size:12px; margin-top:4px; }
+.extension-used { font-size:11px; color:var(--green); white-space:nowrap; }
+.editor-extension-content { padding:0 16px 16px; border-top:1px solid var(--line); }
+.editor-extension-content > .panel { box-shadow:none; border:0; padding:16px 0 0; margin:0!important; background:transparent; }
+.editor-extension-content > .writing-field { margin-top:16px; }

@@ -22,6 +22,7 @@ import {
 import FreeTextInput from "./FreeTextInput";
 import { parentWorld } from "./workspaces";
 import WritingField from "./WritingField";
+import EditorExtension from "./EditorExtension";
 import { CharacterSyndromes, DiseaseList } from "./Syndromes";
 import type { Data, Entry, Project } from "./model";
 export function TagsInput({
@@ -520,32 +521,6 @@ export function EntryEditor({
           削除
         </button>
       </div>
-      <section
-        className="panel"
-        style={{ padding: "1rem", marginBottom: "1rem" }}
-      >
-        <label>
-          設定の保存先（ストーリー／世界観）
-          <select
-            aria-label="設定の保存先（ストーリー／世界観）"
-            value={entry.projectId}
-            onChange={(event) =>
-              onChange({ ...entry, projectId: event.target.value })
-            }
-          >
-            {data.projects
-              .filter((p) => sharedProjectIds(data, entry.projectId).has(p.id))
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <p>
-          ストーリーに保存すると専用設定になります。参照中の世界観に保存すると、その資料を使うストーリーにも編集内容が反映されます。
-        </p>
-      </section>
       <div className="editor-layout">
         <div className="editor-main">
           <section className="panel editor-section">
@@ -555,26 +530,11 @@ export function EntryEditor({
                 自由に記述・候補は任意・自動保存
               </span>
             </div>
-            <ImageInput
-              value={entry.image}
-              onChange={(image) => onChange({ ...entry, image })}
-              onError={onError}
-            />
             <label>
               名前
               <input
                 value={entry.name}
                 onChange={(e) => onChange({ ...entry, name: e.target.value })}
-              />
-            </label>
-            <label>
-              ひとこと・肩書き
-              <input
-                value={entry.subtitle}
-                onChange={(e) =>
-                  onChange({ ...entry, subtitle: e.target.value })
-                }
-                placeholder="この設定を表す、短い言葉"
               />
             </label>
             <div className="form-row">
@@ -846,15 +806,6 @@ export function EntryEditor({
               />
             </label>
           </section>
-          {entry.kind === "character" && (
-            <CharacterSyndromes
-              entry={entry}
-              data={data}
-              onChange={onChange}
-              onOpen={onOpen}
-              onCreate={onCreateSyndrome}
-            />
-          )}
           {isSyndrome(entry) && (
             <section className="panel editor-section">
               <h2>構成する病気</h2>
@@ -876,23 +827,120 @@ export function EntryEditor({
               saveState={saveState}
               placeholder="この世界について、思いつくままに。"
             />
-            <div className="editor-divider" />
-            <WritingField
-              label="作中での通説"
-              value={entry.lore}
-              onChange={(lore) => onChange({ ...entry, lore })}
-              saveState={saveState}
-              placeholder="登場人物や世間が信じていること"
-            />
-            <WritingField
-              label={entry.kind === "clue" ? "真相" : "実際の真相"}
-              value={entry.truth}
-              onChange={(truth) => onChange({ ...entry, truth })}
-              saveState={saveState}
-              placeholder="作者だけが知る、この設定の裏側"
-            />
           </section>
           {entry.kind !== "character" && customFields}
+          <section className="entry-extensions" aria-label="設定の拡張">
+            <h2>拡張</h2>
+            <p className="muted small">
+              必要な機能だけ開いて使えます。閉じても入力した内容は残ります。
+            </p>
+            <EditorExtension
+              key={`${entry.id}:appearance`}
+              recordId={entry.id}
+              id="appearance"
+              title="画像・肩書き"
+              description="設定の画像と短い紹介"
+              used={!!(entry.image || entry.subtitle)}
+            >
+              <ImageInput
+                value={entry.image}
+                onChange={(image) => onChange({ ...entry, image })}
+                onError={onError}
+              />
+              <label>
+                ひとこと・肩書き
+                <input
+                  value={entry.subtitle}
+                  onChange={(e) =>
+                    onChange({ ...entry, subtitle: e.target.value })
+                  }
+                  placeholder="この設定を表す、短い言葉"
+                />
+              </label>
+            </EditorExtension>
+            <EditorExtension
+              key={`${entry.id}:truth`}
+              recordId={entry.id}
+              id="truth"
+              title="通説と真相"
+              description="作中で信じられることと作者が知る真実"
+              used={!!(entry.lore || entry.truth)}
+              initiallyOpen={entry.kind === "clue"}
+            >
+              <WritingField
+                label="作中での通説"
+                value={entry.lore}
+                onChange={(lore) => onChange({ ...entry, lore })}
+                saveState={saveState}
+                placeholder="登場人物や世間が信じていること"
+              />
+              <WritingField
+                label={entry.kind === "clue" ? "真相" : "実際の真相"}
+                value={entry.truth}
+                onChange={(truth) => onChange({ ...entry, truth })}
+                saveState={saveState}
+                placeholder="作者だけが知る、この設定の裏側"
+              />
+            </EditorExtension>
+            {entry.kind === "character" && (
+              <EditorExtension
+                key={`${entry.id}:syndromes`}
+                recordId={entry.id}
+                id="syndromes"
+                title="病気・症候群"
+                description="共通の症状や病気のまとまりを人物に紐づける"
+                used={data.entries.some(
+                  (e) => isSyndrome(e) && entry.links.includes(e.id),
+                )}
+              >
+                {entry.kind === "character" && (
+                  <CharacterSyndromes
+                    entry={entry}
+                    data={data}
+                    onChange={onChange}
+                    onOpen={onOpen}
+                    onCreate={onCreateSyndrome}
+                  />
+                )}
+              </EditorExtension>
+            )}
+            <EditorExtension
+              key={`${entry.id}:scope`}
+              recordId={entry.id}
+              id="scope"
+              title="保存先と共有範囲"
+              description="世界観の共通設定か、物語専用の設定かを変更"
+            >
+              <section
+                className="panel"
+                style={{ padding: "1rem", marginBottom: "1rem" }}
+              >
+                <label>
+                  設定の保存先（ストーリー／世界観）
+                  <select
+                    aria-label="設定の保存先（ストーリー／世界観）"
+                    value={entry.projectId}
+                    onChange={(event) =>
+                      onChange({ ...entry, projectId: event.target.value })
+                    }
+                  >
+                    {data.projects
+                      .filter((p) =>
+                        sharedProjectIds(data, entry.projectId).has(p.id),
+                      )
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <p>
+                  ストーリーに保存すると専用設定になります。参照中の世界観に保存すると、その資料を使うストーリーにも編集内容が反映されます。
+                </p>
+              </section>
+            </EditorExtension>
+          </section>
         </div>
         <aside className="editor-aside">
           <section className="panel editor-section">

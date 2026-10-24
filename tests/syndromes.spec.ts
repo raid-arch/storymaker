@@ -15,6 +15,9 @@ async function person(page: Page, name: string) {
     .locator(".entry-card")
     .filter({ has: page.getByRole("heading", { name, exact: true }) })
     .click();
+  const panel = page.locator('[data-extension="syndromes"]');
+  if ((await panel.getAttribute("open")) === null)
+    await panel.locator(":scope > summary").click();
 }
 async function saved(page: Page) {
   await expect(page.locator(".save-indicator")).toContainText("保存済み");

@@ -1229,7 +1229,7 @@ export default function App() {
                   } catch {}
                 }}
               >
-                <summary>補助ツール</summary>
+                <summary>拡張ツール</summary>
                 {nav
                   .filter(
                     (n) => !["creation", "world", "character"].includes(n.id),
